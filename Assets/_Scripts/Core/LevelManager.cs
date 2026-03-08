@@ -234,8 +234,8 @@ public class LevelManager : MonoBehaviour
         }
 
         // Notify AudioManager if a music clip is defined
-        if (data.musicClip != null)
-            AudioManager.Instance?.PlayMusic(data.musicClip);
+        if (data.musicClip != null) { }
+            // TODO: AudioManager.Instance?.PlayMusic(data.musicClip);
     }
 
     /// <summary>
