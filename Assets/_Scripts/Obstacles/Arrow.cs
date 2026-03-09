@@ -8,20 +8,21 @@ using UnityEngine;
 /// Vola in linea retta a velocità costante nella direzione del suo forward.
 /// NON usa Rigidbody — movimento via Transform per controllo totale.
 ///
-/// COMPORTAMENTO AL CONTATTO:
+/// COMPORTAMENTO:
+///   - Vola per un massimo di lifetime secondi poi torna al pool
 ///   - Colpisce Dante → danno istantaneo → ritorna al pool immediatamente
-///   - Colpisce muro/terreno → si ferma, rimane 1 secondo, poi ritorna al pool
+///   - Ignora muri e terreno — ci pensa il lifetime
 ///
 /// COLLIDER SETUP (sul prefab Arrow):
 ///   CapsuleCollider, isTrigger ✓
 ///   Direction: Z-Axis (asse di volo)
-///   Layer: "Arrow" (non collidere con altre frecce)
+///   Layer: "Arrow"
 ///
 /// INSPECTOR:
-///   damage        → danno inflitto a Dante (default 10)
-///   speed         → velocità in unità/secondo (default 15)
-///   wallStickTime → secondi di permanenza su muro prima del ritorno al pool (default 1)
-///   playerLayer   → LayerMask del layer "Player"
+///   damage      → danno inflitto a Dante (default 10)
+///   speed       → velocità in unità/secondo (default 15)
+///   lifetime    → secondi di vita massima prima di tornare al pool (default 5)
+///   playerLayer → LayerMask del layer "Player"
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class Arrow : MonoBehaviour
@@ -29,18 +30,18 @@ public class Arrow : MonoBehaviour
     [Header("Stats")]
     public float damage = 10f;
     public float speed = 15f;
-    public float wallStickTime = 1f;
+    public float lifetime = 5f;
 
     [Header("Layers")]
     [Tooltip("LayerMask del Player — riceve danno al contatto.")]
     public LayerMask playerLayer;
 
-    // Assegnato da ArrowPool.CreateInstance()
     [HideInInspector]
     public ArrowPool OwnerPool;
 
     // ─── Privati ──────────────────────────────────────────────────────────────
     private bool _hasHit = false;
+    private float _elapsed = 0f;
     private Collider _collider;
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
@@ -53,12 +54,21 @@ public class Arrow : MonoBehaviour
     void OnEnable()
     {
         _hasHit = false;
+        _elapsed = 0f;
         _collider.enabled = true;
     }
 
     void Update()
     {
         if (_hasHit) return;
+
+        // Lifetime — torna al pool dopo N secondi
+        _elapsed += Time.deltaTime;
+        if (_elapsed >= lifetime)
+        {
+            ReturnToPool();
+            return;
+        }
 
         // Volo in linea retta lungo il forward locale
         transform.position += transform.forward * speed * Time.deltaTime;
@@ -68,42 +78,25 @@ public class Arrow : MonoBehaviour
     void OnTriggerEnter(Collider other)
     {
         if (_hasHit) return;
-
-        // Ignora altre frecce
-        if (other.GetComponent<Arrow>() != null) return;
-
-        _hasHit = true;
-        _collider.enabled = false;   // disabilita per evitare collisioni multiple
+        if (other.GetComponent<Arrow>() != null) return;   // ignora altre frecce
 
         bool isPlayer = ((1 << other.gameObject.layer) & playerLayer) != 0;
+        if (!isPlayer) return;   // ignora muri e terreno — ci pensa il lifetime
 
-        if (isPlayer)
-        {
-            // Colpisce Dante — danno e ritorno immediato al pool
-            Health health = other.GetComponent<Health>();
-            if (health == null) health = other.GetComponentInParent<Health>();
-            health?.TakeDamage(damage);
+        _hasHit = true;
+        _collider.enabled = false;
 
-            ReturnToPool();
-        }
-        else
-        {
-            // Colpisce muro/terreno — rimane stuck per wallStickTime poi ritorna
-            StartCoroutine(WallStickRoutine());
-        }
-    }
+        Health health = other.GetComponent<Health>();
+        if (health == null) health = other.GetComponentInParent<Health>();
+        health?.TakeDamage(damage);
 
-    // ─── Wall Stick ───────────────────────────────────────────────────────────
-    private IEnumerator WallStickRoutine()
-    {
-        // La freccia rimane nella posizione di contatto
-        yield return new WaitForSeconds(wallStickTime);
         ReturnToPool();
     }
 
     // ─── Pool ─────────────────────────────────────────────────────────────────
     private void ReturnToPool()
     {
+        _hasHit = true;
         if (OwnerPool != null)
             OwnerPool.Return(gameObject);
         else

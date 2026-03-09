@@ -64,14 +64,36 @@ public class ArrowTrap : MonoBehaviour
     // ─── Privati ──────────────────────────────────────────────────────────────
     private bool _hasTriggered = false;
 
-    // ─── Trigger ──────────────────────────────────────────────────────────────
-    void OnTriggerEnter(Collider other)
+    // ─── Privati aggiuntivi ───────────────────────────────────────────────────
+    private BoxCollider _boxCollider;
+
+    void Start()
+    {
+        _boxCollider = GetComponent<BoxCollider>();
+        if (_boxCollider == null)
+            Debug.LogError("[ArrowTrap] Nessun BoxCollider trovato su questo GameObject!");
+    }
+
+    // ─── Detection via OverlapBox ─────────────────────────────────────────────
+    // Usato invece di OnTriggerEnter perché CharacterController non genera
+    // OnTriggerEnter senza un Rigidbody — OverlapBox funziona sempre.
+    void Update()
     {
         if (_hasTriggered) return;
-        if (!other.CompareTag("Player")) return;
+        if (_boxCollider == null) return;
 
-        _hasTriggered = true;
-        StartCoroutine(SpawnRoutine());
+        // Controlla se Dante è dentro il box ogni frame
+        Collider[] hits = Physics.OverlapBox(
+            _boxCollider.bounds.center,
+            _boxCollider.bounds.extents,
+            transform.rotation,
+            LayerMask.GetMask("Player"));
+
+        if (hits.Length > 0)
+        {
+            _hasTriggered = true;
+            StartCoroutine(SpawnRoutine());
+        }
     }
 
     // ─── Spawn Coroutine ──────────────────────────────────────────────────────

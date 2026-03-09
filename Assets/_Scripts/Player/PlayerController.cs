@@ -112,19 +112,13 @@ public class PlayerController : MonoBehaviour
     // ─── Lifecycle ────────────────────────────────────────────────────────────
     void Awake()
     {
-
         _cc = GetComponent<CharacterController>();
 
-        // DEBUG TEMPORANEO
-        Debug.Log($"[PC] GO name: {gameObject.name}");
-        Debug.Log($"[PC] GO active: {gameObject.activeInHierarchy}");
-        Debug.Log($"[PC] CC found: {_cc != null}");
-        Debug.Log($"[PC] CC enabled: {_cc?.enabled}");
-        Debug.Log($"[PC] CC gameObject: {_cc?.gameObject.name}");
-        Debug.Log($"[PC] CC GO active: {_cc?.gameObject.activeInHierarchy}");
+        // Trova la Main Camera automaticamente se non assegnata in Inspector
+        if (cameraTransform == null)
+            cameraTransform = Camera.main?.transform;
 
 
-        _cc = GetComponent<CharacterController>();
         _animator = GetComponentInChildren<Animator>();
         _input = new PlayerInputActions();
 
@@ -189,7 +183,10 @@ public class PlayerController : MonoBehaviour
     {
         // Salta se a terra O nel coyote time window, mai durante un cast
         if (IsAbilityCasting) return;
-        if (_coyoteTimeCounter > 0f)
+
+        // Controlla IsGrounded (che include il coyote time)
+        // indipendentemente dall'input di movimento corrente
+        if (IsGrounded)
             _jumpQueued = true;
     }
 
@@ -198,32 +195,43 @@ public class PlayerController : MonoBehaviour
     {
         bool groundedNow = _cc.isGrounded;
 
-        // Coyote time: quando lascia il bordo inizia il countdown
-        if (_wasGrounded && !groundedNow)
+        // Coyote time
+        if (groundedNow)
+        {
+            // A terra: mantieni il counter pieno
             _coyoteTimeCounter = coyoteTimeDuration;
-        else if (groundedNow)
-            _coyoteTimeCounter = coyoteTimeDuration;   // reset quando a terra
-        else
+        }
+        else if (_wasGrounded)
+        {
+            // Appena lasciato il bordo: inizia il countdown
+            // NON resettare — lascia che decrementi dal valore corrente
             _coyoteTimeCounter -= Time.deltaTime;
+        }
+        else
+        {
+            // In aria da più di un frame: countdown
+            _coyoteTimeCounter -= Time.deltaTime;
+        }
 
         _coyoteTimeCounter = Mathf.Max(0f, _coyoteTimeCounter);
 
+        // IsGrounded include il coyote time window
+        bool wasIsGrounded = IsGrounded;
         IsGrounded = groundedNow || _coyoteTimeCounter > 0f;
-        _wasGrounded = groundedNow;
 
-        // Animazione atterraggio
+        // Animazione atterraggio — usa groundedNow e _wasGrounded prima dell'update
         if (!_wasGrounded && groundedNow && _isFalling)
         {
             _animator?.SetTrigger(_animLand);
             _isFalling = false;
         }
+
+        _wasGrounded = groundedNow;
     }
 
     // ─── Gravità & Salto ──────────────────────────────────────────────────────
     private void HandleGravity()
     {
-
-        // Guard — evita chiamate su CharacterController non ancora attivo
         if (!_cc.enabled) return;
 
         // Reset velocità Y quando a terra
@@ -256,9 +264,6 @@ public class PlayerController : MonoBehaviour
     // ─── Movimento Orizzontale ────────────────────────────────────────────────
     private void HandleMovement()
     {
-
-        if (!_cc.enabled) return;
-
         // Blocca movimento durante cast abilità
         if (IsAbilityCasting)
         {

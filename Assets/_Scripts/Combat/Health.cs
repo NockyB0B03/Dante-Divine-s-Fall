@@ -51,6 +51,7 @@ public class Health : MonoBehaviour
         if (IsInvincible) return;   // iframes dash — ignora il danno
 
         _current = Mathf.Max(0f, _current - amount);
+        Debug.Log($"[Health] {gameObject.name} HP: {_current}/{maxHealth} (-{amount})");
         OnHealthChanged?.Invoke(_current);
 
         if (_current <= 0f) Die();

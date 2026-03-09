@@ -65,14 +65,15 @@ public class LevelManager : MonoBehaviour
     [Tooltip("Full-screen black Image with a CanvasGroup component.")]
     public CanvasGroup fadeCanvasGroup;
 
-    [Header("Loading Screen")]
-    public GameObject loadingCanvas;
-    public Image loadingBackground;
-    public TMP_Text titleText;
-    public TMP_Text subtitleText;
-    public TMP_Text rulesBodyText;
-    public TMP_Text pressEnterLabel;
-    public Image loadingBarFill;      // optional — can be null
+    // TODO: UI — decommentare quando LoadingScreen è pronta
+    // [Header("Loading Screen")]
+    // public GameObject    loadingCanvas;
+    // public Image         loadingBackground;
+    // public TMP_Text      titleText;
+    // public TMP_Text      subtitleText;
+    // public TMP_Text      rulesBodyText;
+    // public TMP_Text      pressEnterLabel;
+    // public Image         loadingBarFill;
 
     [Header("Timing")]
     [Tooltip("Seconds for the fade-to-black animation.")]
@@ -98,9 +99,9 @@ public class LevelManager : MonoBehaviour
         }
         Instance = this;
 
-        // Loading canvas starts hidden
-        if (loadingCanvas != null)
-            loadingCanvas.SetActive(false);
+        // TODO: UI — loading canvas disabilitato finché non è pronto
+        // if (loadingCanvas != null)
+        //     loadingCanvas.SetActive(false);
 
         // Fade canvas starts transparent
         if (fadeCanvasGroup != null)
@@ -152,19 +153,17 @@ public class LevelManager : MonoBehaviour
         // ── Step 2: Fade to black ─────────────────────────────────────────
         yield return StartCoroutine(FadeOut());
 
-        // ── Step 3: Populate and show loading screen ──────────────────────
-        PopulateLoadingScreen(targetIndex);
-        loadingCanvas.SetActive(true);
-
-        // ── Step 4: Fade loading screen in ────────────────────────────────
-        yield return StartCoroutine(FadeIn());
+        // ── Step 3: TODO — loading screen disabilitata per ora ───────────
+        // PopulateLoadingScreen(targetIndex);
+        // loadingCanvas.SetActive(true);
+        // yield return StartCoroutine(FadeIn());
 
         // ── Step 5: Begin async scene load (NOT activated yet) ────────────
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(targetIndex);
         asyncLoad.allowSceneActivation = false;
 
-        if (pressEnterLabel != null)
-            pressEnterLabel.gameObject.SetActive(false);
+        // if (pressEnterLabel != null)
+        //     pressEnterLabel.gameObject.SetActive(false);
 
         float elapsedReadTime = 0f;
         _readyToActivate = false;
@@ -174,9 +173,9 @@ public class LevelManager : MonoBehaviour
         {
             elapsedReadTime += Time.deltaTime;
 
-            // Update optional loading bar
-            if (loadingBarFill != null)
-                loadingBarFill.fillAmount = Mathf.Clamp01(asyncLoad.progress / 0.9f);
+            // TODO: UI — loading bar
+            // if (loadingBarFill != null)
+            //     loadingBarFill.fillAmount = Mathf.Clamp01(asyncLoad.progress / 0.9f);
 
             bool loadReady = asyncLoad.progress >= 0.9f;
             bool readReady = elapsedReadTime >= minimumReadTime;
@@ -187,16 +186,10 @@ public class LevelManager : MonoBehaviour
             yield return null;
         }
 
-        // ── Step 7: Show "Premi INVIO" label ──────────────────────────────
-        if (pressEnterLabel != null)
-            pressEnterLabel.gameObject.SetActive(true);
-
-        // Fill bar to 100% visually
-        if (loadingBarFill != null)
-            loadingBarFill.fillAmount = 1f;
-
-        // ── Step 8: Wait for Enter key ────────────────────────────────────
-        yield return StartCoroutine(WaitForEnterKey());
+        // ── Step 7-8: TODO — "Premi INVIO" e attesa input disabilitati per ora ──
+        // if (pressEnterLabel != null) pressEnterLabel.gameObject.SetActive(true);
+        // if (loadingBarFill != null) loadingBarFill.fillAmount = 1f;
+        // yield return StartCoroutine(WaitForEnterKey());
 
         // ── Step 9: Fade to black before activation ────────────────────────
         yield return StartCoroutine(FadeOut());
@@ -217,25 +210,28 @@ public class LevelManager : MonoBehaviour
         {
             Debug.LogWarning($"[LevelManager] No LevelData found for scene index {targetSceneIndex}.");
 
-            if (titleText != null) titleText.text = $"Level {targetSceneIndex}";
-            if (subtitleText != null) subtitleText.text = "";
-            if (rulesBodyText != null) rulesBodyText.text = "";
+            // TODO: UI
+            // if (titleText    != null) titleText.text    = $"Level {targetSceneIndex}";
+            // if (subtitleText != null) subtitleText.text = "";
+            // if (rulesBodyText != null) rulesBodyText.text = "";
             return;
         }
 
-        if (titleText != null) titleText.text = data.levelName;
-        if (subtitleText != null) subtitleText.text = data.levelSubtitle;
-        if (rulesBodyText != null) rulesBodyText.text = data.rulesText;
+        // TODO: UI
+        // if (titleText     != null) titleText.text     = data.levelName;
+        // if (subtitleText  != null) subtitleText.text  = data.levelSubtitle;
+        // if (rulesBodyText != null) rulesBodyText.text = data.rulesText;
 
-        if (loadingBackground != null)
-        {
-            loadingBackground.sprite = data.backgroundSprite;
-            loadingBackground.enabled = data.backgroundSprite != null;
-        }
+        // TODO: UI
+        // if (loadingBackground != null)
+        // {
+        //     loadingBackground.sprite  = data.backgroundSprite;
+        //     loadingBackground.enabled = data.backgroundSprite != null;
+        // }
 
-        // Notify AudioManager if a music clip is defined
-        if (data.musicClip != null) { }
-            // TODO: AudioManager.Instance?.PlayMusic(data.musicClip);
+        // TODO: Audio — decommentare quando AudioManager è pronto
+        // if (data.musicClip != null)
+        //     AudioManager.Instance?.PlayMusic(data.musicClip);
     }
 
     /// <summary>
