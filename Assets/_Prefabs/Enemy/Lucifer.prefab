@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4381411680980399439}
   m_Layer: 7
   m_Name: Lucifer
-  m_TagString: Untagged
+  m_TagString: Boss
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -71,7 +71,8 @@ MonoBehaviour:
   destroyDelay: 2
   deathAnimTrigger: Death
   phase2Threshold: 0.5
-  fireballSpawnPoints: []
+  fireballSpawnPoints:
+  - {fileID: 991384157378687433}
   fireballCooldown: 3
   spinCooldown: 5
   spinRadius: 4

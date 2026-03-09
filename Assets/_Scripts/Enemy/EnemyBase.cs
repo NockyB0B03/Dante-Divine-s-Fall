@@ -56,16 +56,30 @@ public abstract class EnemyBase : MonoBehaviour
         EnemyHealth = GetComponent<Health>();
         EnemyAnimator = GetComponentInChildren<Animator>();
 
-        // Recupera il player tramite GameManager — unica fonte di verità
-        if (GameManager.Instance?.Player != null)
-            PlayerTransform = GameManager.Instance.Player.transform;
-        else
-            Debug.LogWarning($"[{GetType().Name}] Player non trovato tramite GameManager. " +
-                             "Assicurati che GameManager sia inizializzato prima dei nemici.");
-
         // Iscrive la morte — non usare destroyOnDeath di Health.cs,
         // gestiamo noi la sequenza per avere l'animazione
         EnemyHealth.OnDeath.AddListener(HandleDeath);
+    }
+
+    protected virtual void Start()
+    {
+        // Start() viene chiamato dopo TUTTI gli Awake() della scena —
+        // PlayerSpawnPoint.Awake() ha già istanziato Dante a questo punto.
+        FindPlayer();
+    }
+
+    /// <summary>
+    /// Cerca il player tramite GameManager.
+    /// Chiamato in Start() per garantire che PlayerSpawnPoint abbia
+    /// già istanziato Dante prima di questa chiamata.
+    /// Le sottoclassi possono richiamarla se PlayerTransform è null.
+    /// </summary>
+    protected void FindPlayer()
+    {
+        if (GameManager.Instance?.Player != null)
+            PlayerTransform = GameManager.Instance.Player.transform;
+        else
+            Debug.LogWarning($"[{GetType().Name}] Player non trovato tramite GameManager.");
     }
 
     protected virtual void OnDestroy()

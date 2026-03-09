@@ -87,8 +87,10 @@ public class LuciferBoss : EnemyBase
         base.Awake();   // inizializza EnemyHealth, EnemyAnimator, PlayerTransform
     }
 
-    void OnEnable()
+    protected override void Start()
     {
+        base.Start();   // chiama FindPlayer() — PlayerTransform è disponibile qui
+
         EnemyHealth.OnHealthChanged.AddListener(CheckPhaseTransition);
         StartCoroutine(FireballLoop());
         StartCoroutine(SpinLoop());

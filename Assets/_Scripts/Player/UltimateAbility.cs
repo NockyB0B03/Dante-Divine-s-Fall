@@ -77,6 +77,9 @@ public class UltimateAbility : MonoBehaviour
         _animator = GetComponentInChildren<Animator>();
         _input = new PlayerInputActions();
 
+        if (luciferoTarget == null)
+            luciferoTarget = GameObject.FindWithTag("Boss")?.transform;
+
         PrewarmPool();
     }
 
