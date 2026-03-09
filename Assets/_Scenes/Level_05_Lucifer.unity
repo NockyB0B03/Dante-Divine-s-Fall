@@ -451,6 +451,14 @@ PrefabInstance:
       propertyPath: destroyDelay
       value: 3
       objectReference: {fileID: 0}
+    - target: {fileID: 3531605953328408129, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
+      propertyPath: fireballCooldown
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3531605953328408129, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
+      propertyPath: groundSpikePrefab
+      value: 
+      objectReference: {fileID: 1208772774634476038, guid: 4fe64ff46225d734db9a1d4c33937495, type: 3}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
 --- !u!1 &945351377
@@ -938,7 +946,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b395c8ff1a2463c43a5597f439a81787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefab: {fileID: 3139569310126931871, guid: 9a8e76d78c648ca49a500056a5511f4a, type: 3}
+  prefab: {fileID: 7034520936088004011, guid: ba3b4394d5cbfee4388c6352080c1958, type: 3}
   initialSize: 10
   containerName: ProjectilePool_Container
 --- !u!4 &1762453796

@@ -217,14 +217,33 @@ public class LuciferBoss : EnemyBase
         // Spawna gli spuntoni in linea retta partendo da Lucifero verso l'esterno
         for (int i = 0; i < spikeCount; i++)
         {
-            Vector3 spawnPos = transform.position + spikeDir * (spikeSpacing * (i + 1));
-            spawnPos.y = 0f;   // a livello del terreno
+            Vector3 candidatePos = transform.position + spikeDir * (spikeSpacing * (i + 1));
+
+            // Raycast verso il basso per trovare la Y reale del terreno
+            RaycastHit hit;
+            Vector3 spawnPos;
+            if (Physics.Raycast(candidatePos + Vector3.up * 10f, Vector3.down, out hit, 20f))
+                spawnPos = hit.point;   // esattamente sulla superficie del terreno
+            else
+                spawnPos = new Vector3(candidatePos.x, transform.position.y, candidatePos.z);
+
             Instantiate(groundSpikePrefab, spawnPos, Quaternion.LookRotation(spikeDir));
         }
     }
 
     // ─── Debug ────────────────────────────────────────────────────────────────
 #if UNITY_EDITOR
+    [ContextMenu("DEBUG — Forza Fase 2")]
+    private void Debug_ForcePhase2()
+    {
+        if (!Application.isPlaying)
+        {
+            Debug.LogWarning("[LuciferBoss] Funziona solo in Play Mode.");
+            return;
+        }
+        EnemyHealth.TakeDamage(EnemyHealth.Current * 0.6f);
+    }
+
     void OnDrawGizmosSelected()
     {
         // Spin radius

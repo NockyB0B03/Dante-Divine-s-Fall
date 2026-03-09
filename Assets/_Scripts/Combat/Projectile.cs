@@ -47,6 +47,8 @@ public class Projectile : MonoBehaviour
 
     protected Rigidbody _rb;
     private bool _hasHit = false;
+    private float _spawnTimer = 0f;          // ignora collisioni nei primi frame
+    private const float SpawnGrace = 0.15f;   // secondi di grazia dopo lo spawn
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
     protected virtual void Awake()
@@ -60,8 +62,15 @@ public class Projectile : MonoBehaviour
     protected virtual void OnEnable()
     {
         _hasHit = false;
+        _spawnTimer = 0f;
         _rb.velocity = Vector3.zero;
         _rb.angularVelocity = Vector3.zero;
+    }
+
+    protected virtual void Update()
+    {
+        if (_spawnTimer < SpawnGrace)
+            _spawnTimer += Time.deltaTime;
     }
 
     // ─── Launch ───────────────────────────────────────────────────────────────
@@ -79,6 +88,7 @@ public class Projectile : MonoBehaviour
     void OnTriggerEnter(Collider other)
     {
         if (_hasHit) return;
+        if (_spawnTimer < SpawnGrace) return;   // grazia spawn — ignora collisioni iniziali
         _hasHit = true;
 
         // Chiama il metodo virtuale — LuciferFireball lo sovrascrive per splash
