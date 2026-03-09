@@ -39,8 +39,7 @@ using UnityEngine;
 ///   └── BossPortal.prefab   ← disabilitato, abilitato da OnDeath UnityEvent
 /// </summary>
 
-[RequireComponent(typeof(Health))]
-public class LuciferBoss : MonoBehaviour
+public class LuciferBoss : EnemyBase
 {
     public enum Phase { One, Two }
 
@@ -76,10 +75,6 @@ public class LuciferBoss : MonoBehaviour
     public float phase2SpeedMultiplier = 1.6f;
 
     // ─── Privati ──────────────────────────────────────────────────────────────
-    private Health _health;
-    private Animator _animator;
-    private Transform _playerTransform;
-
     private Phase _currentPhase = Phase.One;
     private bool _phaseTransitioning = false;
 
@@ -87,21 +82,14 @@ public class LuciferBoss : MonoBehaviour
     private static readonly int _animRoar = Animator.StringToHash("Roar");
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
-    void Awake()
+    protected override void Awake()
     {
-        _health = GetComponent<Health>();
-        _animator = GetComponent<Animator>();
-
-        // Recupera il riferimento al player tramite GameManager
-        if (GameManager.Instance?.Player != null)
-            _playerTransform = GameManager.Instance.Player.transform;
-        else
-            Debug.LogError("[LuciferBoss] Player non trovato tramite GameManager!");
+        base.Awake();   // inizializza EnemyHealth, EnemyAnimator, PlayerTransform
     }
 
     void OnEnable()
     {
-        _health.OnHealthChanged.AddListener(CheckPhaseTransition);
+        EnemyHealth.OnHealthChanged.AddListener(CheckPhaseTransition);
         StartCoroutine(FireballLoop());
         StartCoroutine(SpinLoop());
         // Gli spikes partono solo in Fase 2 — avviati in EnterPhaseTwo()
@@ -109,14 +97,23 @@ public class LuciferBoss : MonoBehaviour
 
     void OnDisable()
     {
-        _health.OnHealthChanged.RemoveListener(CheckPhaseTransition);
+        EnemyHealth.OnHealthChanged.RemoveListener(CheckPhaseTransition);
+    }
+
+    // ─── Override morte ──────────────────────────────────────────────────────
+    protected override void OnDeath()
+    {
+        // Il portale verso Level 6 viene spawnato dalla UnityEvent OnDeath
+        // di Health.cs — configurata in Inspector su Lucifero.
+        // Qui fermiamo le coroutine degli attacchi.
+        StopAllCoroutines();
     }
 
     // ─── Transizione di Fase ──────────────────────────────────────────────────
     private void CheckPhaseTransition(float currentHP)
     {
         if (_currentPhase == Phase.One
-            && _health.Percent <= phase2Threshold
+            && EnemyHealth.Percent <= phase2Threshold
             && !_phaseTransitioning)
         {
             StartCoroutine(EnterPhaseTwo());
@@ -132,7 +129,7 @@ public class LuciferBoss : MonoBehaviour
         GameManager.Instance?.ResetUltimateUses();
 
         // Animazione ruggito — pausa attacchi durante la transizione
-        _animator?.SetTrigger(_animRoar);
+        EnemyAnimator?.SetTrigger(_animRoar);
         yield return new WaitForSeconds(2f);
 
         // Aumenta frequenza attacchi
@@ -152,7 +149,7 @@ public class LuciferBoss : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(fireballCooldown);
-            if (_phaseTransitioning || _playerTransform == null) continue;
+            if (_phaseTransitioning || PlayerTransform == null) continue;
             if (LuciferFireballPool.Instance == null)
             {
                 Debug.LogError("[LuciferBoss] LuciferFireballPool non trovato nella scena!");
@@ -160,7 +157,7 @@ public class LuciferBoss : MonoBehaviour
             }
 
             // Snapshot della posizione del player al momento del lancio
-            Vector3 lastKnownPlayerPos = _playerTransform.position;
+            Vector3 lastKnownPlayerPos = PlayerTransform.position;
 
             foreach (var spawnPt in fireballSpawnPoints)
             {
@@ -179,15 +176,15 @@ public class LuciferBoss : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(spinCooldown);
-            if (_phaseTransitioning || _playerTransform == null) continue;
+            if (_phaseTransitioning || PlayerTransform == null) continue;
 
-            _animator?.SetTrigger(_animSpin);
+            EnemyAnimator?.SetTrigger(_animSpin);
 
             // Controlla se il player è nel raggio
-            float dist = Vector3.Distance(transform.position, _playerTransform.position);
+            float dist = Vector3.Distance(transform.position, PlayerTransform.position);
             if (dist <= spinRadius)
             {
-                Health playerHealth = _playerTransform.GetComponent<Health>();
+                Health playerHealth = PlayerTransform?.GetComponent<Health>();
                 playerHealth?.TakeDamage(spinDamage);
             }
         }

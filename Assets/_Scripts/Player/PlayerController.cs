@@ -74,6 +74,13 @@ public class PlayerController : MonoBehaviour
     /// <summary>Velocità orizzontale normalizzata corrente (0–1). Usata dall'Animator.</summary>
     public float NormalisedSpeed { get; private set; }
 
+    /// <summary>
+    /// Direzione di movimento camera-relativa corrente nel mondo 3D.
+    /// Letta da DashAbility per determinare la direzione dello scatto.
+    /// Vector3.zero se nessun input di movimento.
+    /// </summary>
+    public Vector3 CurrentMoveDirection { get; private set; }
+
     // ─── Privati ──────────────────────────────────────────────────────────────
     private CharacterController _cc;
     private PlayerInputActions _input;
@@ -105,6 +112,18 @@ public class PlayerController : MonoBehaviour
     // ─── Lifecycle ────────────────────────────────────────────────────────────
     void Awake()
     {
+
+        _cc = GetComponent<CharacterController>();
+
+        // DEBUG TEMPORANEO
+        Debug.Log($"[PC] GO name: {gameObject.name}");
+        Debug.Log($"[PC] GO active: {gameObject.activeInHierarchy}");
+        Debug.Log($"[PC] CC found: {_cc != null}");
+        Debug.Log($"[PC] CC enabled: {_cc?.enabled}");
+        Debug.Log($"[PC] CC gameObject: {_cc?.gameObject.name}");
+        Debug.Log($"[PC] CC GO active: {_cc?.gameObject.activeInHierarchy}");
+
+
         _cc = GetComponent<CharacterController>();
         _animator = GetComponentInChildren<Animator>();
         _input = new PlayerInputActions();
@@ -203,6 +222,10 @@ public class PlayerController : MonoBehaviour
     // ─── Gravità & Salto ──────────────────────────────────────────────────────
     private void HandleGravity()
     {
+
+        // Guard — evita chiamate su CharacterController non ancora attivo
+        if (!_cc.enabled) return;
+
         // Reset velocità Y quando a terra
         if (_cc.isGrounded && _verticalVelocity.y < 0f)
             _verticalVelocity.y = -2f;   // piccolo valore negativo mantiene il CC a terra
@@ -233,6 +256,9 @@ public class PlayerController : MonoBehaviour
     // ─── Movimento Orizzontale ────────────────────────────────────────────────
     private void HandleMovement()
     {
+
+        if (!_cc.enabled) return;
+
         // Blocca movimento durante cast abilità
         if (IsAbilityCasting)
         {
@@ -243,6 +269,7 @@ public class PlayerController : MonoBehaviour
         if (_moveInput.sqrMagnitude < 0.01f)
         {
             NormalisedSpeed = 0f;
+            CurrentMoveDirection = Vector3.zero;
             return;
         }
 
@@ -256,6 +283,13 @@ public class PlayerController : MonoBehaviour
 
         Vector3 moveDir = (camForward * _moveInput.y + camRight * _moveInput.x).normalized;
         float speed = _isSprinting ? sprintSpeed : walkSpeed;
+
+        // Aggiorna la direzione corrente — letta da DashAbility
+        CurrentMoveDirection = moveDir;
+
+        // Non muovere se DashAbility sta gestendo il movimento
+        DashAbility dash = GetComponent<DashAbility>();
+        if (dash != null && dash.IsDashing) return;
 
         _cc.Move(moveDir * speed * Time.deltaTime);
 
