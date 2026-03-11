@@ -69,6 +69,10 @@ public class HitBox : MonoBehaviour
     // ─── Collision ────────────────────────────────────────────────────────────
     void OnTriggerEnter(Collider other)
     {
+
+        Debug.Log($"[HitBox] Colpito: {other.gameObject.name} layer={other.gameObject.layer}");
+
+
         // Evita di colpire lo stesso nemico due volte per swing
         if (_hitThisSwing.Contains(other.gameObject)) return;
 

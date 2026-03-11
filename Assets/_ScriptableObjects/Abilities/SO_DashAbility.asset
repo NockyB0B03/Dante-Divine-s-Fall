@@ -9,15 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: SO_Ultimate
-  m_EditorClassIdentifier: Assembly-CSharp::UltimateData
+  m_Script: {fileID: 11500000, guid: 8e0aa2574d1c8344a9c38f65418f79ba, type: 3}
+  m_Name: SO_DashAbility
+  m_EditorClassIdentifier: 
   abilityName: Ability
   icon: {fileID: 0}
   cooldown: 2
   damage: 10
-  legionePrefab: {fileID: 0}
-  spawnCount: 8
-  spawnRadius: 5
-  legionSpeed: 12
-  legionLifetime: 6
+  dashDistance: 6
+  iFrameDuration: 0.3
+  dashDuration: 0.2

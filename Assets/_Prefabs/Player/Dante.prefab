@@ -9,13 +9,16 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5664222941082927808}
+  - component: {fileID: 6567306219898201089}
+  - component: {fileID: 1338409087809478364}
+  - component: {fileID: 7690415460089170454}
   m_Layer: 3
   m_Name: HitBox_Punch
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &5664222941082927808
 Transform:
   m_ObjectHideFlags: 0
@@ -24,13 +27,57 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1421129623242988320}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.328, z: 0.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4918140044456094331}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &6567306219898201089
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1421129623242988320}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.6, y: 0.6, z: 0.5}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1338409087809478364
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1421129623242988320}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a43f12eefcd50ae478f551e38b68bc91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseDamage: 10
+  comboStepDamage: []
+  targetLayers:
+    serializedVersion: 2
+    m_Bits: 128
+  CurrentComboIndex: 0
+--- !u!114 &7690415460089170454
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1421129623242988320}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75d85d45edf11af4da3582a3c80dbba6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showGizmoAlways: 1
 --- !u!1 &1674979465610335215
 GameObject:
   m_ObjectHideFlags: 0
@@ -45,6 +92,7 @@ GameObject:
   - component: {fileID: 1378622276}
   - component: {fileID: 1378622277}
   - component: {fileID: 1378622278}
+  - component: {fileID: 3119877875091587131}
   m_Layer: 3
   m_Name: Dante
   m_TagString: Player
@@ -67,6 +115,8 @@ Transform:
   - {fileID: 7502887823894555395}
   - {fileID: 5664222941082927808}
   - {fileID: 8742537291448040816}
+  - {fileID: 6236302291568373001}
+  - {fileID: 2095602991293888847}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -119,7 +169,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b4be6b3ab2769e468621909edf3bfae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dashData: {fileID: 0}
+  dashData: {fileID: 11400000, guid: 28e155c44f2bc2245856a1718ca9143e, type: 2}
   speedMultiplier: 3.5
 --- !u!114 &1378622277
 MonoBehaviour:
@@ -155,6 +205,59 @@ MonoBehaviour:
   OnDeath:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3119877875091587131
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1674979465610335215}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df8d639092142544196dc67202064feb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  muzzlePoint: {fileID: 2095602991293888847}
+  fireData: {fileID: 11400000, guid: 46832ec3e9b86d94292ba4f74958de36, type: 2}
+  mainCamera: {fileID: 0}
+  castAnimTrigger: FireShot
+  castDuration: 0.8
+  raycastMask:
+    serializedVersion: 2
+    m_Bits: 128
+  fallbackRange: 50
+  arcBoost: 0.4
+--- !u!1 &3665672353851818995
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2095602991293888847}
+  m_Layer: 0
+  m_Name: MuzzlePoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2095602991293888847
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3665672353851818995}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.611, y: 0.5155761, z: 0.508}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4918140044456094331}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3687031530983047938
 GameObject:
   m_ObjectHideFlags: 0
@@ -198,6 +301,8 @@ GameObject:
   - component: {fileID: 3993121517282193941}
   - component: {fileID: 7709883168984700918}
   - component: {fileID: 6863554870605741421}
+  - component: {fileID: 5315662917924435366}
+  - component: {fileID: 4290741288713899132}
   m_Layer: 3
   m_Name: Dante_Visual
   m_TagString: Untagged
@@ -284,3 +389,95 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &5315662917924435366
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9141933800144146298}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0bcbfdb504d0bea4cba1cf1665be7dff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  punchTriggers:
+  - Punch1
+  - Punch2
+  - Punch3
+  - Punch4
+  - Punch5
+  comboWindowDuration: 0.5
+  punchDuration: 0.4
+  hitBoxStartFraction: 0.33
+  hitBox: {fileID: 7690415460089170454}
+  damageDealer: {fileID: 1338409087809478364}
+--- !u!95 &4290741288713899132
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9141933800144146298}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: cbfb5c5b52b053446b04fa29469d3336, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 1
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!1 &9189520784076922549
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6236302291568373001}
+  - component: {fileID: 7938252737291294220}
+  m_Layer: 0
+  m_Name: PauseMenu
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6236302291568373001
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9189520784076922549}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -0.000000059604645}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4918140044456094331}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7938252737291294220
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9189520784076922549}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec983ac63297567409b4970a8013ee7b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fadeDuration: 0.2
+  btnRiprendi: {fileID: 0}
+  btnRicomincia: {fileID: 0}
+  btnMainMenu: {fileID: 0}

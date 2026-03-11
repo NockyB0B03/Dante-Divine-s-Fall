@@ -46,6 +46,12 @@ public class PlayerAnimationBridge : MonoBehaviour
     [Tooltip("Secondi di finestra dopo la fine dell'animazione per accodare il prossimo colpo.")]
     public float comboWindowDuration = 0.5f;
 
+    [Tooltip("Durata totale di un colpo in secondi — usata SOLO se non c'è Animator (demo mode).")]
+    public float punchDuration = 0.4f;
+
+    [Tooltip("Frazione della durata del colpo in cui la hitbox è attiva (es. 0.33 = 33%-66%).")]
+    public float hitBoxStartFraction = 0.33f;
+
     [Header("References")]
     [Tooltip("HitBox.cs sul root Dante — abilita/disabilita il collider punch.")]
     public HitBox hitBox;
@@ -91,8 +97,7 @@ public class PlayerAnimationBridge : MonoBehaviour
     // ─── Input Punch ──────────────────────────────────────────────────────────
     private void OnPunchInput(InputAction.CallbackContext ctx)
     {
-        // Punch è SEMPRE disponibile — nessun gate CombatUnlocked
-        // (il GDD dice che le restrizioni riguardano Fire, Ultimate, non il Punch)
+        Debug.Log($"[PAB] OnPunchInput ricevuto — isAttacking={_isAttacking} hitBox={hitBox}");
 
         int next = (_currentIndex + 1) % punchTriggers.Length;
 
@@ -122,12 +127,42 @@ public class PlayerAnimationBridge : MonoBehaviour
         _currentIndex = index;
         _isAttacking = true;
 
-        // Aggiorna DamageDealer con l'indice del colpo corrente
-        // (permette danni diversi per ogni step della combo)
         if (damageDealer != null)
             damageDealer.CurrentComboIndex = index;
 
-        _animator.SetTrigger(punchTriggers[index]);
+        if (_animator != null)
+        {
+            // Modalità normale — Animator presente, usa i trigger
+            _animator.SetTrigger(punchTriggers[index]);
+        }
+        else
+        {
+            // Demo mode — nessun Animator, usa timer per hitbox e fine attacco
+            StartCoroutine(PunchTimerRoutine());
+        }
+    }
+
+    /// <summary>
+    /// Demo mode — simula gli Animation Events con un timer.
+    /// Abilita la hitbox al 33% della durata, la disabilita al 66%,
+    /// poi chiama OnAttackAnimationEnd() alla fine.
+    /// </summary>
+    private IEnumerator PunchTimerRoutine()
+    {
+        float hitStart = punchDuration * hitBoxStartFraction;
+        float hitEnd = punchDuration * (1f - hitBoxStartFraction);
+
+        // Attendi inizio hitbox
+        yield return new WaitForSeconds(hitStart);
+        EnableHitBox();
+
+        // Attendi fine hitbox
+        yield return new WaitForSeconds(hitEnd - hitStart);
+        DisableHitBox();
+
+        // Attendi fine colpo
+        yield return new WaitForSeconds(punchDuration - hitEnd);
+        OnAttackAnimationEnd();
     }
 
     // ─── Animation Events ─────────────────────────────────────────────────────

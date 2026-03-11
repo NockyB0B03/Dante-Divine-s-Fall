@@ -83,7 +83,8 @@ public class FireAbility : MonoBehaviour
     void Awake()
     {
         _playerController = GetComponent<PlayerController>();
-        _animator = GetComponentInChildren<Animator>();
+        _animator = GetComponentInChildren<Animator>(true);
+        // true = include inactive GameObjects nella ricerca
         _input = new PlayerInputActions();
 
         if (mainCamera == null)
@@ -140,7 +141,11 @@ public class FireAbility : MonoBehaviour
         _playerController.IsAbilityCasting = true;   // locks move/jump/dash in PlayerController
 
         // ── Play animation ────────────────────────────────────────────────
-        _animator.SetTrigger(castAnimTrigger);
+        // Secondo tentativo — cerca l'Animator se non trovato in Awake
+        if (_animator == null)
+            _animator = GetComponentInChildren<Animator>(true);
+
+        _animator?.SetTrigger(castAnimTrigger);
 
         // ── Wait for half the animation before launching
         // (feels more natural — orb leaves hand mid-swing)

@@ -113,12 +113,6 @@ public class PlayerController : MonoBehaviour
     void Awake()
     {
         _cc = GetComponent<CharacterController>();
-
-        // Trova la Main Camera automaticamente se non assegnata in Inspector
-        if (cameraTransform == null)
-            cameraTransform = Camera.main?.transform;
-
-
         _animator = GetComponentInChildren<Animator>();
         _input = new PlayerInputActions();
 
@@ -127,6 +121,18 @@ public class PlayerController : MonoBehaviour
 
         if (cameraTransform == null)
             cameraTransform = Camera.main?.transform;
+    }
+
+    void Start()
+    {
+        // Secondo tentativo — Camera.main potrebbe non essere
+        // disponibile in Awake() se il FreeLook non è ancora inizializzato
+        if (cameraTransform == null)
+            cameraTransform = Camera.main?.transform;
+
+        if (cameraTransform == null)
+            Debug.LogError("[PlayerController] Camera non trovata! " +
+                           "Assicurati che Main Camera sia in scena.");
     }
 
     void OnEnable()
