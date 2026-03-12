@@ -581,6 +581,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1866458934821756954}
+  - component: {fileID: 7322556719084548057}
   m_Layer: 3
   m_Name: DeathManager
   m_TagString: Untagged
@@ -603,6 +604,27 @@ Transform:
   m_Father: {fileID: 4918140044456094331}
   m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7322556719084548057
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1508434362099878994}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95a4c9b6ad16c6740aa1021dafc18439, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  deathCanvas: {fileID: 6228254415038611666}
+  btnRiprendi: {fileID: 3941101844085282228}
+  btnMainMenu: {fileID: 5330933904761516632}
+  freeLookCamera: {fileID: 0}
+  cameraHeightOffset: 3
+  cameraFollowSpeed: 2
+  fallDeathTime: 3
+  fadeDuration: 1
+  fadeCanvasGroup: {fileID: 1280621484953747177}
 --- !u!1 &1674979465610335215
 GameObject:
   m_ObjectHideFlags: 0

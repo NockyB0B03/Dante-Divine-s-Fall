@@ -81,6 +81,9 @@ public class PlayerController : MonoBehaviour
     /// <summary>True se Dante è a terra o nel coyote time window.</summary>
     public bool IsGrounded { get; private set; }
 
+    /// <summary>Velocità verticale corrente — negativa durante la caduta.</summary>
+    public float VerticalVelocity => _verticalVelocity.y;
+
     /// <summary>Velocità orizzontale normalizzata corrente (0–1). Usata dall'Animator.</summary>
     public float NormalisedSpeed { get; private set; }
 

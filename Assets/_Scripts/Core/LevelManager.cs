@@ -65,23 +65,25 @@ public class LevelManager : MonoBehaviour
     [Tooltip("Full-screen black Image with a CanvasGroup component.")]
     public CanvasGroup fadeCanvasGroup;
 
-    // TODO: UI — decommentare quando LoadingScreen è pronta
-    // [Header("Loading Screen")]
-    // public GameObject    loadingCanvas;
-    // public Image         loadingBackground;
-    // public TMP_Text      titleText;
-    // public TMP_Text      subtitleText;
-    // public TMP_Text      rulesBodyText;
-    // public TMP_Text      pressEnterLabel;
-    // public Image         loadingBarFill;
+    [Header("Loading Screen")]
+    [Tooltip("GameObject del canvas loading screen — disabilitato di default.")]
+    public GameObject loadingCanvas;
+
+    [Tooltip("Testo regole/descrizione del livello.")]
+    public TMPro.TMP_Text rulesBodyText;
+
+    [Tooltip("Barra di caricamento — Image tipo Filled.")]
+    public UnityEngine.UI.Image loadingBarFill;
+
+    [Tooltip("Testo 'Premi INVIO per continuare' — nascosto finché load < 90%.")]
+    public TMPro.TMP_Text pressEnterLabel;
 
     [Header("Timing")]
     [Tooltip("Seconds for the fade-to-black animation.")]
     public float fadeDuration = 0.6f;
 
-    [Tooltip("Seconds the loading screen stays visible before Enter is even checked " +
-             "(gives player time to read even on fast machines).")]
-    public float minimumReadTime = 1.5f;
+    [Tooltip("Secondi minimi prima che INVIO sia accettato — dà tempo al player di leggere.")]
+    public float minimumReadTime = 4f;
 
     // ─── Private State ────────────────────────────────────────────────────────
     private bool _readyToActivate = false;   // true when async ≥ 90% AND minimumReadTime elapsed
@@ -99,9 +101,8 @@ public class LevelManager : MonoBehaviour
         }
         Instance = this;
 
-        // TODO: UI — loading canvas disabilitato finché non è pronto
-        // if (loadingCanvas != null)
-        //     loadingCanvas.SetActive(false);
+        if (loadingCanvas != null)
+            loadingCanvas.SetActive(false);
 
         // Fade canvas starts transparent
         if (fadeCanvasGroup != null)
@@ -153,17 +154,17 @@ public class LevelManager : MonoBehaviour
         // ── Step 2: Fade to black ─────────────────────────────────────────
         yield return StartCoroutine(FadeOut());
 
-        // ── Step 3: TODO — loading screen disabilitata per ora ───────────
-        // PopulateLoadingScreen(targetIndex);
-        // loadingCanvas.SetActive(true);
-        // yield return StartCoroutine(FadeIn());
+        // ── Step 3: Popola e mostra loading screen ───────────────────────
+        PopulateLoadingScreen(targetIndex);
+        if (loadingCanvas != null) loadingCanvas.SetActive(true);
+        yield return StartCoroutine(FadeIn());
 
         // ── Step 5: Begin async scene load (NOT activated yet) ────────────
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(targetIndex);
         asyncLoad.allowSceneActivation = false;
 
-        // if (pressEnterLabel != null)
-        //     pressEnterLabel.gameObject.SetActive(false);
+        if (pressEnterLabel != null)
+            pressEnterLabel.gameObject.SetActive(false);
 
         float elapsedReadTime = 0f;
         _readyToActivate = false;
@@ -173,9 +174,8 @@ public class LevelManager : MonoBehaviour
         {
             elapsedReadTime += Time.deltaTime;
 
-            // TODO: UI — loading bar
-            // if (loadingBarFill != null)
-            //     loadingBarFill.fillAmount = Mathf.Clamp01(asyncLoad.progress / 0.9f);
+            if (loadingBarFill != null)
+                loadingBarFill.fillAmount = Mathf.Clamp01(asyncLoad.progress / 0.9f);
 
             bool loadReady = asyncLoad.progress >= 0.9f;
             bool readReady = elapsedReadTime >= minimumReadTime;
@@ -186,10 +186,12 @@ public class LevelManager : MonoBehaviour
             yield return null;
         }
 
-        // ── Step 7-8: TODO — "Premi INVIO" e attesa input disabilitati per ora ──
-        // if (pressEnterLabel != null) pressEnterLabel.gameObject.SetActive(true);
-        // if (loadingBarFill != null) loadingBarFill.fillAmount = 1f;
-        // yield return StartCoroutine(WaitForEnterKey());
+        // ── Step 7: Mostra "Premi INVIO" ─────────────────────────────────
+        if (pressEnterLabel != null) pressEnterLabel.gameObject.SetActive(true);
+        if (loadingBarFill != null) loadingBarFill.fillAmount = 1f;
+
+        // ── Step 8: Attendi INVIO ─────────────────────────────────────────
+        yield return StartCoroutine(WaitForEnterKey());
 
         // ── Step 9: Fade to black before activation ────────────────────────
         yield return StartCoroutine(FadeOut());
@@ -210,28 +212,16 @@ public class LevelManager : MonoBehaviour
         {
             Debug.LogWarning($"[LevelManager] No LevelData found for scene index {targetSceneIndex}.");
 
-            // TODO: UI
-            // if (titleText    != null) titleText.text    = $"Level {targetSceneIndex}";
-            // if (subtitleText != null) subtitleText.text = "";
-            // if (rulesBodyText != null) rulesBodyText.text = "";
+            if (rulesBodyText != null) rulesBodyText.text = "";
             return;
         }
 
-        // TODO: UI
-        // if (titleText     != null) titleText.text     = data.levelName;
-        // if (subtitleText  != null) subtitleText.text  = data.levelSubtitle;
-        // if (rulesBodyText != null) rulesBodyText.text = data.rulesText;
+        if (rulesBodyText != null)
+            rulesBodyText.text = data.rulesText;
 
-        // TODO: UI
-        // if (loadingBackground != null)
-        // {
-        //     loadingBackground.sprite  = data.backgroundSprite;
-        //     loadingBackground.enabled = data.backgroundSprite != null;
-        // }
-
-        // TODO: Audio — decommentare quando AudioManager è pronto
-        // if (data.musicClip != null)
-        //     AudioManager.Instance?.PlayMusic(data.musicClip);
+        // Avvia la musica del livello tramite AudioManager
+        if (data.musicClip != null)
+            AudioManager.Instance?.PlayMusic(data.musicClip);
     }
 
     /// <summary>
