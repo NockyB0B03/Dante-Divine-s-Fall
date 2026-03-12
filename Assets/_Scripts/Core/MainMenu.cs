@@ -1,57 +1,105 @@
+using System.Collections;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 /// <summary>
 /// DANTE: DIVINE'S FALL — MainMenu.cs
-/// ─────────────────────────────────────
-/// Gestisce il Main Menu: avvia il gioco tramite GameManager.StartGame()
-/// sia alla pressione del tasto Enter/Submit sia al click del bottone Start sul Canvas.
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Gestisce il Main Menu — un canvas con un solo bottone "Inizia".
+/// Quando premuto: fade out → carica Level 1 (scene index 1).
 ///
-/// Setup in scena:
-///   1. Aggancia questo script a un GameObject vuoto (es. "MainMenuController").
-///   2. Collega il bottone Start del Canvas all'evento onClick → MainMenu.OnStartButtonPressed().
+/// SETUP IN SCENA (MainMenu, scene index 0):
+///   1. Crea Canvas (Screen Space Overlay, Sort Order 0)
+///   2. Aggiungi CanvasGroup al Canvas
+///   3. Struttura:
+///      MainMenuCanvas
+///      ├── FadePanel     ← Image nera fullscreen, CanvasGroup separato per il fade
+///      └── Panel
+///          ├── TitleText ← "DANTE: DIVINE'S FALL"
+///          └── BtnInizio ← bottone "Inizia"
+///   4. Aggiungi MainMenu.cs su un GameObject vuoto "MainMenu"
+///   5. Collega i campi in Inspector
+///
+/// INSPECTOR:
+///   btnInizio        → bottone Inizia
+///   fadeCanvasGroup  → CanvasGroup del FadePanel (Image nera fullscreen)
+///   fadeDuration     → durata fade out in secondi (default 0.6)
+///   targetSceneIndex → scene index del Level 1 (default 1)
 /// </summary>
 public class MainMenu : MonoBehaviour
 {
-    // ─── Input ────────────────────────────────────────────────────────────────
-    private PlayerInputActions _input;
+    [Header("UI")]
+    [Tooltip("Bottone Inizia.")]
+    public Button btnInizio;
+
+    [Tooltip("CanvasGroup del pannello nero fullscreen — guidato dal fade.")]
+    public CanvasGroup fadeCanvasGroup;
+
+    [Header("Settings")]
+    [Tooltip("Durata del fade out in secondi.")]
+    public float fadeDuration = 0.6f;
+
+    [Tooltip("Build index della scena del Level 1.")]
+    public int targetSceneIndex = 1;
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
-    private void Awake()
+    void Start()
     {
-        _input = new PlayerInputActions();
-    }
-
-    private void OnEnable()
-    {
-        _input.Enable();
-        _input.UI.Submit.performed += OnSubmitPressed;   // Enter / South button
-    }
-
-    private void OnDisable()
-    {
-        _input.UI.Submit.performed -= OnSubmitPressed;
-        _input.Disable();
-    }
-
-    // ─── Input callback ───────────────────────────────────────────────────────
-    private void OnSubmitPressed(InputAction.CallbackContext ctx) => StartGame();
-
-    // ─── Bottone Canvas ───────────────────────────────────────────────────────
-    /// <summary>
-    /// Collega questo metodo all'evento OnClick del bottone Start nel Canvas.
-    /// </summary>
-    public void OnStartButtonPressed() => StartGame();
-
-    // ─── Core ─────────────────────────────────────────────────────────────────
-    private void StartGame()
-    {
-        if (GameManager.Instance == null)
+        // Parte trasparente — fade in opzionale all'apertura del menu
+        if (fadeCanvasGroup != null)
         {
-            Debug.LogError("[MainMenu] GameManager non trovato in scena!");
-            return;
+            fadeCanvasGroup.alpha = 0f;
+            fadeCanvasGroup.blocksRaycasts = false;
         }
 
-        GameManager.Instance.StartGame();
+        // Mostra il cursore nel menu
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        btnInizio?.onClick.AddListener(OnInizioPressed);
+    }
+
+    void OnDestroy()
+    {
+        btnInizio?.onClick.RemoveListener(OnInizioPressed);
+    }
+
+    // ─── Bottone ──────────────────────────────────────────────────────────────
+    private void OnInizioPressed()
+    {
+        // Disabilita il bottone per evitare doppio click
+        if (btnInizio != null)
+            btnInizio.interactable = false;
+
+        StartCoroutine(FadeAndLoad());
+    }
+
+    // ─── Fade + Load ──────────────────────────────────────────────────────────
+    private IEnumerator FadeAndLoad()
+    {
+        // Fade out — schermo diventa nero
+        if (fadeCanvasGroup != null)
+        {
+            fadeCanvasGroup.blocksRaycasts = true;
+            float elapsed = 0f;
+
+            while (elapsed < fadeDuration)
+            {
+                elapsed += Time.deltaTime;
+                fadeCanvasGroup.alpha = Mathf.Clamp01(elapsed / fadeDuration);
+                yield return null;
+            }
+
+            fadeCanvasGroup.alpha = 1f;
+        }
+        else
+        {
+            // Nessun fade configurato — piccola pausa per feedback visivo
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        // Carica Level 1
+        SceneManager.LoadScene(targetSceneIndex);
     }
 }
