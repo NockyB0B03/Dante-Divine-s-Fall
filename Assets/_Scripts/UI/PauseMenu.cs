@@ -2,42 +2,54 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 /// <summary>
 /// DANTE: DIVINE'S FALL — PauseMenu.cs
 /// ─────────────────────────────────────────────────────────────────────────────
-/// Vive come figlio di Dante nel prefab — viene istanziato con lui.
-/// Trova il PauseCanvas nella scena tramite tag "PauseCanvas" in Start().
+/// Vive come figlio di Dante nel prefab insieme al PauseCanvas.
+/// Non serve creare nulla in scena — tutto è dentro il prefab.
 ///
-/// SETUP IN OGNI SCENA:
-///   1. Crea Canvas → rinominalo "PauseCanvas" → tag "PauseCanvas"
-///   2. Aggiungi CanvasGroup al Canvas
-///   3. Struttura figli:
-///      PauseCanvas
-///      └── Panel
-///          ├── TitleText
-///          ├── BtnRiprendi    → OnClick: PauseMenu.Resume()
-///          ├── BtnRicomincia  → OnClick: PauseMenu.RestartLevel()
-///          └── BtnMainMenu    → OnClick: PauseMenu.GoToMainMenu()
-///   4. Disabilita PauseCanvas di default
+/// STRUTTURA PREFAB DANTE:
+///   Dante (root)
+///   ├── ...
+///   ├── PauseMenu          ← questo script
+///   └── PauseCanvas        ← Canvas (Screen Space Overlay)
+///       └── Panel
+///           ├── TitleText
+///           ├── BtnRiprendi
+///           ├── BtnRicomincia
+///           └── BtnMainMenu
 ///
-/// PREFAB DANTE:
-///   Dante
-///   └── PauseMenu  ← questo script, nessun canvas figlio
+/// SETUP PAUSECANVAS:
+///   Canvas → Render Mode: Screen Space - Overlay, Sort Order: 50
+///   Aggiungi CanvasGroup al GameObject PauseCanvas
+///   Disabilita PauseCanvas di default (spunta off)
 ///
-/// INSPECTOR:
-///   fadeDuration → durata fade (default 0.2)
-///   btnRiprendi, btnRicomincia, btnMainMenu → bottoni del canvas
+/// INSPECTOR su PauseMenu:
+///   pauseCanvas      → trascina PauseCanvas (figlio di Dante)
+///   btnRiprendi      → trascina BtnRiprendi
+///   btnRicomincia    → trascina BtnRicomincia
+///   btnMainMenu      → trascina BtnMainMenu
+///   fadeDuration     → durata fade (default 0.2)
 /// </summary>
 public class PauseMenu : MonoBehaviour
 {
+    [Header("References")]
+    [Tooltip("GameObject PauseCanvas — figlio di Dante nel prefab.")]
+    public GameObject pauseCanvas;
+
+    [Tooltip("Bottone Riprendi.")]
+    public Button btnRiprendi;
+
+    [Tooltip("Bottone Ricomincia.")]
+    public Button btnRicomincia;
+
+    [Tooltip("Bottone Main Menu.")]
+    public Button btnMainMenu;
+
     [Header("Settings")]
     public float fadeDuration = 0.2f;
-
-    [Header("Bottoni")]
-    public UnityEngine.UI.Button btnRiprendi;
-    public UnityEngine.UI.Button btnRicomincia;
-    public UnityEngine.UI.Button btnMainMenu;
 
     // ─── Privati ──────────────────────────────────────────────────────────────
     private PlayerInputActions _input;
@@ -49,53 +61,46 @@ public class PauseMenu : MonoBehaviour
     void Awake()
     {
         _input = new PlayerInputActions();
-    }
 
-    void Start()
-    {
-        // Trova il PauseCanvas nella scena tramite tag
-        GameObject canvasGO = GameObject.FindWithTag("PauseCanvas");
-        if (canvasGO != null)
+        if (pauseCanvas != null)
         {
-            _canvasGroup = canvasGO.GetComponent<CanvasGroup>();
+            _canvasGroup = pauseCanvas.GetComponent<CanvasGroup>();
             if (_canvasGroup == null)
                 Debug.LogError("[PauseMenu] PauseCanvas non ha un CanvasGroup!");
 
             // Parte nascosto
-            _canvasGroup.alpha = 0f;
-            _canvasGroup.interactable = false;
-            _canvasGroup.blocksRaycasts = false;
-            canvasGO.SetActive(false);
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = 0f;
+                _canvasGroup.interactable = false;
+                _canvasGroup.blocksRaycasts = false;
+            }
+            pauseCanvas.SetActive(false);
         }
         else
         {
-            Debug.LogError("[PauseMenu] Nessun GameObject con tag 'PauseCanvas' trovato in scena!");
+            Debug.LogError("[PauseMenu] pauseCanvas non assegnato in Inspector!");
         }
-
-        // Trova i bottoni tramite nome se non assegnati in Inspector
-        if (_canvasGroup != null)
-        {
-            Transform panel = _canvasGroup.transform.GetComponentInChildren<UnityEngine.UI.Button>()?.transform.parent;
-            if (btnRiprendi == null) btnRiprendi = FindButton("BtnRiprendi");
-            if (btnRicomincia == null) btnRicomincia = FindButton("BtnRicomincia");
-            if (btnMainMenu == null) btnMainMenu = FindButton("BtnMainMenu");
-        }
-
-        btnRiprendi?.onClick.AddListener(Resume);
-        btnRicomincia?.onClick.AddListener(RestartLevel);
-        btnMainMenu?.onClick.AddListener(GoToMainMenu);
     }
 
     void OnEnable()
     {
         _input.Enable();
         _input.Player.Pause.performed += OnPauseInput;
+
+        btnRiprendi?.onClick.AddListener(Resume);
+        btnRicomincia?.onClick.AddListener(RestartLevel);
+        btnMainMenu?.onClick.AddListener(GoToMainMenu);
     }
 
     void OnDisable()
     {
         _input.Player.Pause.performed -= OnPauseInput;
         _input.Disable();
+
+        btnRiprendi?.onClick.RemoveListener(Resume);
+        btnRicomincia?.onClick.RemoveListener(RestartLevel);
+        btnMainMenu?.onClick.RemoveListener(GoToMainMenu);
     }
 
     // ─── Input ────────────────────────────────────────────────────────────────
@@ -158,7 +163,7 @@ public class PauseMenu : MonoBehaviour
 
         if (fadeIn)
         {
-            _canvasGroup.gameObject.SetActive(true);
+            pauseCanvas.SetActive(true);
             _canvasGroup.alpha = 0f;
         }
 
@@ -166,10 +171,12 @@ public class PauseMenu : MonoBehaviour
         float targetAlpha = fadeIn ? 1f : 0f;
         float elapsed = 0f;
 
+        // unscaledDeltaTime — funziona con timeScale = 0
         while (elapsed < fadeDuration)
         {
-            elapsed += Time.unscaledDeltaTime;   // unscaled — funziona con timeScale=0
-            _canvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, elapsed / fadeDuration);
+            elapsed += Time.unscaledDeltaTime;
+            _canvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha,
+                                             elapsed / fadeDuration);
             yield return null;
         }
 
@@ -184,22 +191,9 @@ public class PauseMenu : MonoBehaviour
         {
             _canvasGroup.interactable = false;
             _canvasGroup.blocksRaycasts = false;
-            _canvasGroup.gameObject.SetActive(false);
+            pauseCanvas.SetActive(false);
         }
 
         _fadeRoutine = null;
-    }
-
-    // ─── Utility ──────────────────────────────────────────────────────────────
-    private UnityEngine.UI.Button FindButton(string buttonName)
-    {
-        GameObject go = GameObject.Find(buttonName);
-        if (go == null)
-        {
-            Debug.LogWarning($"[PauseMenu] Bottone '{buttonName}' non trovato in scena. " +
-                             "Assegnalo manualmente in Inspector.");
-            return null;
-        }
-        return go.GetComponent<UnityEngine.UI.Button>();
     }
 }

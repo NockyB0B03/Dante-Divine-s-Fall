@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b29a9ff7d957cd741ab4851f7bd814ef, type: 3}
+  m_Name: SO_SandPlatform
+  m_EditorClassIdentifier: 
+  shakeDuration: 1.5
+  shakeIntensity: 0.05
+  shakeFrequency: 20
+  fallSpeed: 5
+  stayDuration: 3
+  fadeDuration: 0.5
+  fallDuration: 2

@@ -50,6 +50,16 @@ public class PlayerController : MonoBehaviour
     [Tooltip("Secondi di grazia per saltare dopo aver lasciato un bordo.")]
     public float coyoteTimeDuration = 0.15f;
 
+    [Header("Ground Check")]
+    [Tooltip("Distanza del ground check SphereCast verso il basso.")]
+    public float groundCheckDistance = 0.12f;
+
+    [Tooltip("Raggio della sfera per il ground check — deve essere minore del Radius del CC.")]
+    public float groundCheckRadius = 0.25f;
+
+    [Tooltip("Layer su cui Dante può stare in piedi — spunta solo Default.")]
+    public LayerMask groundLayers = ~0;
+
     [Header("Rotation")]
     [Tooltip("Tempo di smoothing della rotazione Slerp. Valori bassi = più reattivo.")]
     [Range(0.01f, 1f)]
@@ -199,33 +209,22 @@ public class PlayerController : MonoBehaviour
     // ─── Ground Detection ─────────────────────────────────────────────────────
     private void UpdateGroundedState()
     {
-        bool groundedNow = _cc.isGrounded;
+        // Doppio check: CC.isGrounded + SphereCast verso il basso
+        // CC.isGrounded è inaffidabile sui bordi — SphereCast lo integra
+        bool ccGrounded = _cc.isGrounded;
+        bool sphereGrounded = CheckGroundSphere();
+        bool groundedNow = ccGrounded || sphereGrounded;
 
         // Coyote time
         if (groundedNow)
-        {
-            // A terra: mantieni il counter pieno
             _coyoteTimeCounter = coyoteTimeDuration;
-        }
-        else if (_wasGrounded)
-        {
-            // Appena lasciato il bordo: inizia il countdown
-            // NON resettare — lascia che decrementi dal valore corrente
-            _coyoteTimeCounter -= Time.deltaTime;
-        }
         else
-        {
-            // In aria da più di un frame: countdown
             _coyoteTimeCounter -= Time.deltaTime;
-        }
 
         _coyoteTimeCounter = Mathf.Max(0f, _coyoteTimeCounter);
-
-        // IsGrounded include il coyote time window
-        bool wasIsGrounded = IsGrounded;
         IsGrounded = groundedNow || _coyoteTimeCounter > 0f;
 
-        // Animazione atterraggio — usa groundedNow e _wasGrounded prima dell'update
+        // Animazione atterraggio
         if (!_wasGrounded && groundedNow && _isFalling)
         {
             _animator?.SetTrigger(_animLand);
@@ -233,6 +232,28 @@ public class PlayerController : MonoBehaviour
         }
 
         _wasGrounded = groundedNow;
+    }
+
+    /// <summary>
+    /// SphereCast verso il basso partendo dal centro del CharacterController.
+    /// Più affidabile di CC.isGrounded sui bordi e superfici irregolari.
+    /// </summary>
+    private bool CheckGroundSphere()
+    {
+        if (!_cc.enabled) return false;
+
+        // Centro della sfera = base del CC + groundCheckRadius (per evitare overlap iniziale)
+        Vector3 sphereOrigin = transform.position +
+                               Vector3.up * (groundCheckRadius + 0.02f);
+
+        return Physics.SphereCast(
+            sphereOrigin,
+            groundCheckRadius,
+            Vector3.down,
+            out _,
+            groundCheckDistance + groundCheckRadius,
+            groundLayers,
+            QueryTriggerInteraction.Ignore);
     }
 
     // ─── Gravità & Salto ──────────────────────────────────────────────────────
