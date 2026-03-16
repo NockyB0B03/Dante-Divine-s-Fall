@@ -63,16 +63,20 @@ public abstract class EnemyBase : MonoBehaviour
 
     protected virtual void Start()
     {
-        // Start() viene chiamato dopo TUTTI gli Awake() della scena —
-        // PlayerSpawnPoint.Awake() ha già istanziato Dante a questo punto.
+        StartCoroutine(FindPlayerDelayed());
+    }
+
+    private IEnumerator FindPlayerDelayed()
+    {
+        // Aspetta un frame — garantisce che PlayerSpawnPoint.Awake()
+        // e GameManager.RegisterPlayer() siano già stati eseguiti
+        yield return null;
         FindPlayer();
     }
 
     /// <summary>
     /// Cerca il player tramite GameManager.
-    /// Chiamato in Start() per garantire che PlayerSpawnPoint abbia
-    /// già istanziato Dante prima di questa chiamata.
-    /// Le sottoclassi possono richiamarla se PlayerTransform è null.
+    /// Chiamabile anche dalle sottoclassi se PlayerTransform è null.
     /// </summary>
     protected void FindPlayer()
     {

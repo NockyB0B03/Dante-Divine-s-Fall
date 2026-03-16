@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd116d0a8e64446418d02e0ec5e4f08f, type: 3}
   m_Name: LevelData_Level_05
   m_EditorClassIdentifier: 
-  canvasContent: {fileID: 0}
-  loadingMusic: {fileID: 0}
-  gameplayMusic: {fileID: 0}
-  deathMusic: {fileID: 0}
+  canvasContent: {fileID: 11400000, guid: 0564fdcf7f9487948aa5d47cde48e0e3, type: 2}
+  loadingMusic: {fileID: 8300000, guid: e675642de4931234c896a0195d9fde4f, type: 3}
+  gameplayMusic: {fileID: 8300000, guid: 87329af84245bc0418bebdfaf1414530, type: 3}
+  deathMusic: {fileID: 8300000, guid: 994dfdbffa662934ab25ac78b607a43e, type: 3}

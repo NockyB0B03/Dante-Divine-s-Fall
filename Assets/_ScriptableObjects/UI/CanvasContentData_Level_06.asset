@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fc5ab93533206446b0f2d05e8501eb9, type: 3}
   m_Name: CanvasContentData_Level_06
   m_EditorClassIdentifier: 
-  header: TITOLO LIVELLO
+  header: lucifero
   testo: Descrizione del livello.
   premiInvio: Premi INVIO per continuare
