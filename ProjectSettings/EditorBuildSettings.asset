@@ -9,17 +9,17 @@ EditorBuildSettings:
     path: Assets/_Scenes/Level_00_MainMenu.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
   - enabled: 1
-    path: Assets/_Scenes/Level_01_Frecce.unity
-    guid: 42fb239a9f2b2a946bf99550cb477f0e
-  - enabled: 1
-    path: Assets/_Scenes/Level_02_SelvaOscura.unity
+    path: Assets/_Scenes/Level_01_SelvaOscura.unity
     guid: 6c928b46f0bcb5140a3e93fdf12a359c
   - enabled: 1
-    path: Assets/_Scenes/Level_03_Falling.unity
-    guid: 5d2d1a4845b746c40a0bcaca15372edc
+    path: Assets/_Scenes/Level_02_Frecce.unity
+    guid: 42fb239a9f2b2a946bf99550cb477f0e
   - enabled: 1
     path: Assets/_Scenes/Level_04_Labirinto.unity
     guid: fc54a9c8ce31ba34fbdb649e84c0b676
+  - enabled: 1
+    path: Assets/_Scenes/Level_03_Falling.unity
+    guid: 5d2d1a4845b746c40a0bcaca15372edc
   - enabled: 1
     path: Assets/_Scenes/Level_05_Lucifer.unity
     guid: 575b43babef99d2409c856035b5820cb

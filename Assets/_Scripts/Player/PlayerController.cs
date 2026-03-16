@@ -60,6 +60,12 @@ public class PlayerController : MonoBehaviour
     [Tooltip("Layer su cui Dante può stare in piedi — spunta solo Default.")]
     public LayerMask groundLayers = ~0;
 
+    [Tooltip("Layer Terrain — quando Dante è su questo layer non può morire per caduta.")]
+    public LayerMask terrainLayer;
+
+    [Tooltip("Distanza massima verso il basso per rilevare il Terrain (default 2).")]
+    public float terrainCheckDistance = 2f;
+
     [Header("Rotation")]
     [Tooltip("Tempo di smoothing della rotazione Slerp. Valori bassi = più reattivo.")]
     [Range(0.01f, 1f)]
@@ -83,6 +89,22 @@ public class PlayerController : MonoBehaviour
 
     /// <summary>Velocità verticale corrente — negativa durante la caduta.</summary>
     public float VerticalVelocity => _verticalVelocity.y;
+
+    /// <summary>
+    /// True se il layer Terrain è rilevato entro terrainCheckDistance sotto Dante.
+    /// Usato da DeathManager per disabilitare la morte per caduta sui livelli con Terrain.
+    /// </summary>
+    public bool IsOverTerrain { get; private set; } = false;
+
+    /// <summary>
+    /// True quando lo SphereCast rileva il layer Terrain sotto Dante.
+    /// Usato da DeathManager per impedire la morte da caduta sul terreno.
+    /// </summary>
+
+    /// <summary>
+    /// True se lo SphereCast rileva il layer Terrain sotto Dante.
+    /// Quando true DeathManager non conta il fall timer.
+    /// </summary>
 
     /// <summary>Velocità orizzontale normalizzata corrente (0–1). Usata dall'Animator.</summary>
     public float NormalisedSpeed { get; private set; }
@@ -213,10 +235,13 @@ public class PlayerController : MonoBehaviour
     private void UpdateGroundedState()
     {
         // Doppio check: CC.isGrounded + SphereCast verso il basso
-        // CC.isGrounded è inaffidabile sui bordi — SphereCast lo integra
         bool ccGrounded = _cc.isGrounded;
         bool sphereGrounded = CheckGroundSphere();
-        bool groundedNow = ccGrounded || sphereGrounded;
+
+        // Terrain check — se c'è un Terrain sotto entro terrainCheckDistance,
+        // forza IsGrounded = true per evitare morti false sui livelli con Terrain
+        IsOverTerrain = CheckTerrainBelow();
+        bool groundedNow = ccGrounded || sphereGrounded || IsOverTerrain;
 
         // Coyote time
         if (groundedNow)
@@ -245,17 +270,35 @@ public class PlayerController : MonoBehaviour
     {
         if (!_cc.enabled) return false;
 
-        // Centro della sfera = base del CC + groundCheckRadius (per evitare overlap iniziale)
         Vector3 sphereOrigin = transform.position +
                                Vector3.up * (groundCheckRadius + 0.02f);
 
+        float castDistance = groundCheckDistance + groundCheckRadius;
+
+        // Check terreno normale
+        bool grounded = Physics.SphereCast(
+            sphereOrigin, groundCheckRadius, Vector3.down,
+            out _, castDistance, groundLayers,
+            QueryTriggerInteraction.Ignore);
+
+        return grounded;
+    }
+
+    /// <summary>
+    /// Controlla se sotto Dante c'è un layer Terrain entro terrainCheckDistance.
+    /// </summary>
+    private bool CheckTerrainBelow()
+    {
+        if (terrainLayer == 0) return false;
+        if (!_cc.enabled) return false;
+
         return Physics.SphereCast(
-            sphereOrigin,
-            groundCheckRadius,
+            transform.position + Vector3.up * 0.3f,
+            0.3f,
             Vector3.down,
             out _,
-            groundCheckDistance + groundCheckRadius,
-            groundLayers,
+            terrainCheckDistance,
+            terrainLayer,
             QueryTriggerInteraction.Ignore);
     }
 

@@ -64,17 +64,14 @@ public class MainMenu : MonoBehaviour
 
     // ─── Attendi fine loading screen ─────────────────────────────────────────
     /// <summary>
-    /// LevelManager.SceneStartRoutine chiama SetPaused(false) alla fine.
-    /// Aspettiamo che GameManager esca dallo stato Paused per abilitare il canvas.
+    /// Ascolta l'evento OnLoadingScreenComplete di LevelManager.
+    /// Il canvas viene abilitato solo quando LevelManager ha finito
+    /// la sua LoadingScreenRoutine completa.
     /// </summary>
     private System.Collections.IEnumerator WaitForLoadingScreenEnd()
     {
-        // Attendi che GameManager esista
-        while (GameManager.Instance == null)
-            yield return null;
-
-        // Attendi che la loading screen finisca (stato torna a Playing o MainMenu)
-        while (GameManager.Instance.CurrentState == GameManager.GameState.Paused)
+        // Attendi che LevelManager esista ed abbia finito la loading screen
+        while (LevelManager.Instance == null || !LevelManager.Instance.LoadingScreenComplete)
             yield return null;
 
         // Abilita il canvas del main menu

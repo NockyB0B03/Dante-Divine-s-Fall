@@ -3,7 +3,17 @@ guid: 712b3c31e8dae23469a25c60ae60bfc5
 ModelImporter:
   serializedVersion: 21300
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Material_0
+    second: {fileID: 2100000, guid: 9e92171fd67cd3d47bfa5aa9184e12db, type: 2}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: lucifero
+    second: {fileID: 2800000, guid: 5703302ebc8d7aa44952eee465508271, type: 3}
   materials:
     materialImportMode: 2
     materialName: 0

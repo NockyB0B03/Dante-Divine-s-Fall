@@ -119,17 +119,25 @@ public class DeathManager : MonoBehaviour
         btnMainMenu?.onClick.RemoveListener(GoToMainMenu);
     }
 
+    [Tooltip("Velocità verticale negativa minima per iniziare a contare la caduta. " +
+             "Aumenta se il terreno irregolare causa falsi positivi (default -8).")]
+    public float fallVelocityThreshold = -8f;
+
+    // Terrain layer gestito da PlayerController.IsOverTerrain
+
     void Update()
     {
         if (_sequenceStarted || _isDead) return;
         if (_playerController == null) return;
 
-        // Controlla se Dante è in caduta libera (non a terra e velocità Y negativa)
+        // Caduta libera reale: non a terra E velocità Y sotto la soglia
         bool falling = !_playerController.IsGrounded &&
-                       _playerController.VerticalVelocity < -1f;
+                       _playerController.VerticalVelocity < fallVelocityThreshold;
 
         if (falling)
         {
+            // Se sotto Dante c'è un Terrain — nessuna morte per caduta
+            if (_playerController.IsOverTerrain) { _fallTimer = 0f; return; }
             _fallTimer += Time.deltaTime;
             if (_fallTimer >= fallDeathTime)
             {
@@ -139,7 +147,6 @@ public class DeathManager : MonoBehaviour
         }
         else
         {
-            // Reset timer se tocca terra
             _fallTimer = 0f;
         }
     }

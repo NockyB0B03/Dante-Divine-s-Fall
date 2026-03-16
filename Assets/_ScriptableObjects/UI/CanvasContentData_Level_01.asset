@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fc5ab93533206446b0f2d05e8501eb9, type: 3}
   m_Name: CanvasContentData_Level_01
   m_EditorClassIdentifier: 
-  header: TITOLO LIVELLO
-  testo: Descrizione del livello.
+  header: Inferno, Canto I
+  testo: "\"Nel mezzo del cammin di nostra vita\r\nmi ritrovai per una selva oscura,\r\nch\xE9
+    la diritta via era smarrita.\""
   premiInvio: Premi INVIO per continuare
