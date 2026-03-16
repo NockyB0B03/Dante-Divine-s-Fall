@@ -48,6 +48,9 @@ public class PauseMenu : MonoBehaviour
     [Tooltip("Bottone Main Menu.")]
     public Button btnMainMenu;
 
+    [Tooltip("Bottone Settings.")]
+    public Button btnSettings;
+
     [Header("Settings")]
     public float fadeDuration = 0.2f;
 
@@ -91,6 +94,7 @@ public class PauseMenu : MonoBehaviour
         btnRiprendi?.onClick.AddListener(Resume);
         btnRicomincia?.onClick.AddListener(RestartLevel);
         btnMainMenu?.onClick.AddListener(GoToMainMenu);
+        btnSettings?.onClick.AddListener(OnSettingsPressed);
     }
 
     void OnDisable()
@@ -101,6 +105,13 @@ public class PauseMenu : MonoBehaviour
         btnRiprendi?.onClick.RemoveListener(Resume);
         btnRicomincia?.onClick.RemoveListener(RestartLevel);
         btnMainMenu?.onClick.RemoveListener(GoToMainMenu);
+        btnSettings?.onClick.RemoveListener(OnSettingsPressed);
+    }
+
+    // ─── Settings ────────────────────────────────────────────────────────────
+    private void OnSettingsPressed()
+    {
+        SettingsMenu.Instance?.Open();
     }
 
     // ─── Input ────────────────────────────────────────────────────────────────

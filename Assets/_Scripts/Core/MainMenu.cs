@@ -34,6 +34,7 @@ public class MainMenu : MonoBehaviour
 {
     [Header("UI")]
     public Button btnInizio;
+    public Button btnSettings;
 
     [Tooltip("Canvas del main menu — disabilitato di default, abilitato dopo la loading screen.")]
     public GameObject mainMenuCanvas;
@@ -52,6 +53,7 @@ public class MainMenu : MonoBehaviour
         Cursor.visible = true;
 
         btnInizio?.onClick.AddListener(OnInizioPressed);
+        btnSettings?.onClick.AddListener(OnSettingsPressed);
 
         // Ascolta la fine della loading screen per abilitare il canvas
         StartCoroutine(WaitForLoadingScreenEnd());
@@ -60,6 +62,7 @@ public class MainMenu : MonoBehaviour
     void OnDestroy()
     {
         btnInizio?.onClick.RemoveListener(OnInizioPressed);
+        btnSettings?.onClick.RemoveListener(OnSettingsPressed);
     }
 
     // ─── Attendi fine loading screen ─────────────────────────────────────────
@@ -79,7 +82,12 @@ public class MainMenu : MonoBehaviour
             mainMenuCanvas.SetActive(true);
     }
 
-    // ─── Bottone ──────────────────────────────────────────────────────────────
+    // ─── Bottoni ─────────────────────────────────────────────────────────────
+    private void OnSettingsPressed()
+    {
+        SettingsMenu.Instance?.Open();
+    }
+
     private void OnInizioPressed()
     {
         if (btnInizio != null)
