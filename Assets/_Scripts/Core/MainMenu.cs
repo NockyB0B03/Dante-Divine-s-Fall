@@ -1,63 +1,60 @@
-using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
 /// DANTE: DIVINE'S FALL — MainMenu.cs
 /// ─────────────────────────────────────────────────────────────────────────────
 /// Gestisce il Main Menu — un canvas con un solo bottone "Inizia".
-/// Quando premuto: fade out → carica Level 1 (scene index 1).
+/// La loading screen prima del MainMenu è gestita da LevelManager.Awake().
+/// Quando si preme Inizia chiama LevelManager.LoadLevel(1) — tutto il flusso
+/// loading screen + audio + fade è gestito da LevelManager.
 ///
-/// SETUP IN SCENA (MainMenu, scene index 0):
-///   1. Crea Canvas (Screen Space Overlay, Sort Order 0)
-///   2. Aggiungi CanvasGroup al Canvas
-///   3. Struttura:
-///      MainMenuCanvas
-///      ├── FadePanel     ← Image nera fullscreen, CanvasGroup separato per il fade
-///      └── Panel
-///          ├── TitleText ← "DANTE: DIVINE'S FALL"
-///          └── BtnInizio ← bottone "Inizia"
-///   4. Aggiungi MainMenu.cs su un GameObject vuoto "MainMenu"
-///   5. Collega i campi in Inspector
+/// SETUP SCENA MainMenu (index 0):
+///   GameManager          ← DontDestroyOnLoad
+///   AudioManager         ← DontDestroyOnLoad
+///   LevelManager         ← levelData = LevelData_MainMenu
+///                           loadingCanvasPrefab assegnato
+///   EventSystem          ← Input System UI Input Module
+///   MainMenuCanvas       ← Canvas SO Overlay — parte disabilitato
+///   └── Panel
+///       ├── TitleText
+///       └── BtnInizio
+///   MainMenu             ← questo script
+///
+/// LevelData_MainMenu deve avere:
+///   loadingMusic  → musica durante la loading screen iniziale
+///   gameplayMusic → musica del main menu
+///   canvasContent → header/body/premiInvio per la loading screen iniziale
 ///
 /// INSPECTOR:
-///   btnInizio        → bottone Inizia
-///   fadeCanvasGroup  → CanvasGroup del FadePanel (Image nera fullscreen)
-///   fadeDuration     → durata fade out in secondi (default 0.6)
-///   targetSceneIndex → scene index del Level 1 (default 1)
+///   btnInizio     → bottone Inizia
+///   mainMenuCanvas → GameObject del canvas principale — abilitato dopo la loading screen
 /// </summary>
 public class MainMenu : MonoBehaviour
 {
     [Header("UI")]
-    [Tooltip("Bottone Inizia.")]
     public Button btnInizio;
 
-    [Tooltip("CanvasGroup del pannello nero fullscreen — guidato dal fade.")]
-    public CanvasGroup fadeCanvasGroup;
-
-    [Header("Settings")]
-    [Tooltip("Durata del fade out in secondi.")]
-    public float fadeDuration = 0.6f;
-
-    [Tooltip("Build index della scena del Level 1.")]
-    public int targetSceneIndex = 1;
+    [Tooltip("Canvas del main menu — disabilitato di default, abilitato dopo la loading screen.")]
+    public GameObject mainMenuCanvas;
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
+    void Awake()
+    {
+        // Canvas parte disabilitato — LevelManager lo abilita dopo la loading screen
+        if (mainMenuCanvas != null)
+            mainMenuCanvas.SetActive(false);
+    }
+
     void Start()
     {
-        // Parte trasparente — fade in opzionale all'apertura del menu
-        if (fadeCanvasGroup != null)
-        {
-            fadeCanvasGroup.alpha = 0f;
-            fadeCanvasGroup.blocksRaycasts = false;
-        }
-
-        // Mostra il cursore nel menu
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
         btnInizio?.onClick.AddListener(OnInizioPressed);
+
+        // Ascolta la fine della loading screen per abilitare il canvas
+        StartCoroutine(WaitForLoadingScreenEnd());
     }
 
     void OnDestroy()
@@ -65,41 +62,35 @@ public class MainMenu : MonoBehaviour
         btnInizio?.onClick.RemoveListener(OnInizioPressed);
     }
 
+    // ─── Attendi fine loading screen ─────────────────────────────────────────
+    /// <summary>
+    /// LevelManager.SceneStartRoutine chiama SetPaused(false) alla fine.
+    /// Aspettiamo che GameManager esca dallo stato Paused per abilitare il canvas.
+    /// </summary>
+    private System.Collections.IEnumerator WaitForLoadingScreenEnd()
+    {
+        // Attendi che GameManager esista
+        while (GameManager.Instance == null)
+            yield return null;
+
+        // Attendi che la loading screen finisca (stato torna a Playing o MainMenu)
+        while (GameManager.Instance.CurrentState == GameManager.GameState.Paused)
+            yield return null;
+
+        // Abilita il canvas del main menu
+        if (mainMenuCanvas != null)
+            mainMenuCanvas.SetActive(true);
+    }
+
     // ─── Bottone ──────────────────────────────────────────────────────────────
     private void OnInizioPressed()
     {
-        // Disabilita il bottone per evitare doppio click
         if (btnInizio != null)
             btnInizio.interactable = false;
 
-        StartCoroutine(FadeAndLoad());
-    }
-
-    // ─── Fade + Load ──────────────────────────────────────────────────────────
-    private IEnumerator FadeAndLoad()
-    {
-        // Fade out — schermo diventa nero
-        if (fadeCanvasGroup != null)
-        {
-            fadeCanvasGroup.blocksRaycasts = true;
-            float elapsed = 0f;
-
-            while (elapsed < fadeDuration)
-            {
-                elapsed += Time.deltaTime;
-                fadeCanvasGroup.alpha = Mathf.Clamp01(elapsed / fadeDuration);
-                yield return null;
-            }
-
-            fadeCanvasGroup.alpha = 1f;
-        }
+        if (LevelManager.Instance != null)
+            LevelManager.Instance.LoadLevel(1);
         else
-        {
-            // Nessun fade configurato — piccola pausa per feedback visivo
-            yield return new WaitForSeconds(0.1f);
-        }
-
-        // Carica Level 1
-        SceneManager.LoadScene(targetSceneIndex);
+            Debug.LogError("[MainMenu] LevelManager non trovato!");
     }
 }

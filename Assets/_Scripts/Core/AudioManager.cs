@@ -4,157 +4,136 @@ using UnityEngine;
 /// <summary>
 /// DANTE: DIVINE'S FALL — AudioManager.cs
 /// ─────────────────────────────────────────────────────────────────────────────
-/// Singleton DontDestroyOnLoad — persiste tra tutte le scene.
-/// Gestisce la musica di gioco:
-///   - Un clip per livello, assegnato tramite LevelData SO
-///   - Loop automatico — riparte immediatamente quando finisce
-///   - Fade in all'inizio di ogni livello
-///   - Cambio immediato tra livelli (nessun fade out)
+/// Singleton DontDestroyOnLoad.
+/// Gestisce un singolo canale audio in loop (musica/ambience).
+/// Metodi pubblici chiamabili da LevelManager, DeathManager, o qualsiasi script.
 ///
-/// SETUP IN SCENA:
-///   Crea un GameObject vuoto "AudioManager" nella scena MainMenu (index 0).
-///   Aggiungi AudioManager.cs — persiste automaticamente in tutte le scene.
-///   NON mettere AudioManager nelle altre scene — il singleton lo impedisce.
+/// API:
+///   PlayLooping(clip, fadeIn)  → avvia clip in loop con fade in opzionale
+///   Stop(fadeOut)              → ferma la clip con fade out opzionale
+///   SetVolume(float)           → cambia volume a runtime
 ///
-/// COME ASSEGNARE LA MUSICA PER LIVELLO:
-///   Ogni LevelData SO ha un campo musicClip — trascina l'mp3.
-///   LevelManager chiama AudioManager.Instance.PlayMusic(clip) ad ogni caricamento.
-///   (La chiamata è già scritta in LevelManager.cs — basta decommentarla.)
-///
-/// INSPECTOR:
-///   volume       → volume della musica (default 0.8)
-///   fadeInTime   → durata fade in in secondi (default 2)
+/// SETUP: un GameObject "AudioManager" nella scena MainMenu con AudioManager.cs.
+/// Per musica del menu: assegna clip + Play On Awake direttamente sull'AudioSource.
 /// </summary>
 [RequireComponent(typeof(AudioSource))]
 public class AudioManager : MonoBehaviour
 {
-    // ─── Singleton ────────────────────────────────────────────────────────────
     public static AudioManager Instance { get; private set; }
 
-    // ─── Inspector ────────────────────────────────────────────────────────────
     [Header("Settings")]
     [Range(0f, 1f)]
-    [Tooltip("Volume della musica.")]
     public float volume = 0.8f;
 
-    [Tooltip("Durata del fade in in secondi all'inizio di ogni livello.")]
-    public float fadeInTime = 2f;
+    [Tooltip("Durata del fade in/out in secondi.")]
+    public float fadeDuration = 1.5f;
 
     // ─── Privati ──────────────────────────────────────────────────────────────
-    private AudioSource _audioSource;
+    private AudioSource _source;
     private Coroutine _fadeRoutine;
     private AudioClip _currentClip;
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
     void Awake()
     {
-        // Singleton DontDestroyOnLoad
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // Setup AudioSource
-        _audioSource = GetComponent<AudioSource>();
-        _audioSource.loop = true;    // loop automatico
-
-        // Opzione A — Play On Awake attivo in Inspector:
-        // non azzeriamo il volume né forziamo playOnAwake=false.
-        // Il clip e il volume sono già impostati in Inspector.
-        // Opzione B — PlayMusic() gestisce tutto via codice.
-        if (!_audioSource.playOnAwake)
-        {
-            _audioSource.volume = 0f;
-            _audioSource.playOnAwake = false;
-        }
-        else
-        {
-            // Fade in sulla musica del menu
-            _currentClip = _audioSource.clip;
-        }
+        _source = GetComponent<AudioSource>();
+        _source.loop = true;
+        _source.playOnAwake = false;
     }
 
     void Start()
     {
-        // Se Play On Awake è attivo avvia il fade in sulla musica del menu
-        if (_audioSource.playOnAwake && _audioSource.clip != null)
+        // Musica menu — se Play On Awake è attivo in Inspector
+        if (_source.clip != null && _source.playOnAwake)
         {
-            _audioSource.volume = 0f;
-            if (!_audioSource.isPlaying) _audioSource.Play();
-            if (_fadeRoutine != null) StopCoroutine(_fadeRoutine);
-            _fadeRoutine = StartCoroutine(FadeIn());
+            _currentClip = _source.clip;
+            _source.volume = 0f;
+            _source.Play();
+            StartFade(0f, volume, fadeDuration);
         }
     }
 
-    void OnDestroy()
-    {
-        if (Instance == this) Instance = null;
-    }
+    void OnDestroy() { if (Instance == this) Instance = null; }
 
     // ─── API pubblica ─────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Avvia la riproduzione di un clip con fade in.
-    /// Se il clip è lo stesso già in riproduzione non fa nulla.
-    /// Chiamato da LevelManager ad ogni caricamento scena.
+    /// Avvia una clip in loop.
+    /// Se è la stessa clip già in riproduzione non fa nulla.
+    /// fadeIn: se true fa fade in, altrimenti parte al volume pieno.
     /// </summary>
-    public void PlayMusic(AudioClip clip)
+    public void PlayLooping(AudioClip clip, bool fadeIn = true)
     {
-        if (clip == null)
-        {
-            StopMusic();
-            return;
-        }
-
-        // Stesso clip già in riproduzione — non interrompere
-        if (_currentClip == clip && _audioSource.isPlaying) return;
+        if (clip == null) { Stop(); return; }
+        if (_currentClip == clip && _source.isPlaying) return;
 
         _currentClip = clip;
+        _source.Stop();
+        _source.clip = clip;
+        _source.volume = fadeIn ? 0f : volume;
+        _source.Play();
 
-        // Cambio immediato — stop e riparti con il nuovo clip
-        _audioSource.Stop();
-        _audioSource.clip = clip;
-        _audioSource.volume = 0f;
-        _audioSource.Play();
-
-        // Fade in
-        if (_fadeRoutine != null) StopCoroutine(_fadeRoutine);
-        _fadeRoutine = StartCoroutine(FadeIn());
+        if (fadeIn) StartFade(0f, volume, fadeDuration);
     }
 
-    /// <summary>Ferma la musica immediatamente.</summary>
-    public void StopMusic()
+    /// <summary>
+    /// Ferma la clip corrente.
+    /// fadeOut: se true fa fade out prima di fermarsi.
+    /// </summary>
+    public void Stop(bool fadeOut = false)
     {
-        if (_fadeRoutine != null) StopCoroutine(_fadeRoutine);
-        _audioSource.Stop();
-        _audioSource.volume = 0f;
-        _currentClip = null;
+        if (!_source.isPlaying) return;
+
+        if (fadeOut)
+            StartFade(volume, 0f, fadeDuration, stopAfter: true);
+        else
+        {
+            if (_fadeRoutine != null) StopCoroutine(_fadeRoutine);
+            _source.Stop();
+            _source.volume = 0f;
+            _currentClip = null;
+        }
     }
 
-    /// <summary>Modifica il volume a runtime — es. da un menu opzioni.</summary>
+    /// <summary>Cambia il volume a runtime.</summary>
     public void SetVolume(float newVolume)
     {
         volume = Mathf.Clamp01(newVolume);
-        _audioSource.volume = volume;
+        _source.volume = volume;
     }
 
-    // ─── Fade In ──────────────────────────────────────────────────────────────
-    private IEnumerator FadeIn()
+    // ─── Fade ─────────────────────────────────────────────────────────────────
+    private void StartFade(float from, float to, float duration, bool stopAfter = false)
+    {
+        if (_fadeRoutine != null) StopCoroutine(_fadeRoutine);
+        _fadeRoutine = StartCoroutine(FadeRoutine(from, to, duration, stopAfter));
+    }
+
+    private IEnumerator FadeRoutine(float from, float to, float duration, bool stopAfter)
     {
         float elapsed = 0f;
+        _source.volume = from;
 
-        while (elapsed < fadeInTime)
+        while (elapsed < duration)
         {
-            elapsed += Time.unscaledDeltaTime;   // funziona anche in pausa
-            _audioSource.volume = Mathf.Lerp(0f, volume, elapsed / fadeInTime);
+            elapsed += Time.unscaledDeltaTime;
+            _source.volume = Mathf.Lerp(from, to, elapsed / duration);
             yield return null;
         }
 
-        _audioSource.volume = volume;
+        _source.volume = to;
+
+        if (stopAfter)
+        {
+            _source.Stop();
+            _source.volume = 0f;
+            _currentClip = null;
+        }
+
         _fadeRoutine = null;
     }
 }

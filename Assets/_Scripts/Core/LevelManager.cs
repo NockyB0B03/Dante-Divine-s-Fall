@@ -1,309 +1,385 @@
 ﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
+using UnityEngine.InputSystem;
 using TMPro;
+using UnityEngine.UI;
 
 /// <summary>
 /// DANTE: DIVINE'S FALL — LevelManager.cs
 /// ─────────────────────────────────────────────────────────────────────────────
-/// Per-scene singleton (NOT DontDestroyOnLoad).
-/// A fresh instance lives in every gameplay scene as a prefab.
-/// Owns: async scene loading, fade-to-black transition, loading screen display,
-///       Enter-to-start gate (only after async load reaches 90%), and
-///       LevelData ScriptableObject lookup.
+/// Per-scena singleton (NOT DontDestroyOnLoad).
+/// Responsabilità: loading screen, transizioni fade, audio tramite AudioManager.
 ///
-/// ── SCENE BUILD INDEX CONTRACT (mirrors GameManager) ──────────────────────
-///   0  → MainMenu
-///   1  → Level 1  (Selva Oscura)
-///   2  → Level 2  (Piattaforme)
-///   3  → Level 3  (Labirinto Diavoli)
-///   4  → Level 4  (Sabbia / Cappe di Piombo)
-///   5  → Level 5  (Boss — Lucifero)
-///   6  → Level 6  (Fine / Le Stelle)
+/// FLUSSO COMPLETO:
+///   PortalController.LoadLevel(index)
+///     → FadeOut
+///     → Mostra LoadingCanvas + avvia loadingMusic
+///     → FadeIn loading screen
+///     → LoadSceneAsync (allowActivation = false)
+///     → Barra progresso: riempie nei 4s minimi oppure segue async (il più lento)
+///     → Mostra "Premi INVIO"
+///     → Attende INVIO → Stop loadingMusic → avvia gameplayMusic
+///     → FadeOut
+///     → allowSceneActivation = true
+///     → Nuova scena: LevelManager.Awake() → FadeIn
 ///
-/// ── INSPECTOR SETUP ───────────────────────────────────────────────────────
-///   levelDataList   → drag LevelData SOs in order: slot 0 = Level 1 (index 1),
-///                     slot 1 = Level 2 (index 2), … slot 5 = Level 6 (index 6).
-///                     Slot count must equal total gameplay scenes (6).
+/// FLUSSO RELOAD (morte/pausa → ricarica):
+///   SceneManager.LoadScene(current) — nessuna loading screen
+///   Nuova scena: LevelManager.Awake() → FadeIn → avvia gameplayMusic
 ///
-///   fadeImage       → a full-screen black Image on a Screen Space — Overlay canvas
-///                     with a Canvas Group (alpha driven by coroutine).
-///   loadingCanvas   → the entire loading screen canvas (disabled by default).
-///   loadingBG       → Image component for background sprite swap.
-///   titleText       → TMP text for level name.
-///   subtitleText    → TMP text for level subtitle.
-///   rulesText       → TMP text for rules paragraph.
-///   pressEnterLabel → TMP text "Premi INVIO per iniziare" (hidden until load ≥ 90%).
-///   loadingBarFill  → optional Image (type: Filled) showing async progress 0→1.
-///
-/// ── FADE CANVAS SETUP IN EDITOR ───────────────────────────────────────────
-///   1. Create a Canvas (Screen Space Overlay, Sort Order 99).
-///   2. Add a full-screen black Image child → assign to fadeImage.
-///   3. Add a CanvasGroup to that Image → FadeManager will drive its alpha.
-///   4. Set Image alpha to 0 initially (CanvasGroup.alpha = 0).
-///   The same canvas can parent both the fade Image and the loadingCanvas.
-///
-/// ── PORTAL WIRING ─────────────────────────────────────────────────────────
-///   On each portal's PortalController component:
-///     portalTarget = 2   (scene build index of destination)
-///   PortalController.cs calls:
-///     LevelManager.Instance.LoadLevel(portalTarget);
+/// INSPECTOR:
+///   levelData         → LevelData SO con audio e CanvasContentData
+///   loadingCanvasPrefab → prefab del canvas loading screen
+///   fadeDuration      → durata fade (default 0.5s)
+///   minimumReadTime   → secondi minimi loading (default 4s)
 /// </summary>
-
 public class LevelManager : MonoBehaviour
 {
     // ─── Singleton ────────────────────────────────────────────────────────────
     public static LevelManager Instance { get; private set; }
 
-    // ─── Level Data ───────────────────────────────────────────────────────────
-    [Header("Level Data (slot 0 = scene index 1, slot 1 = scene index 2, …)")]
-    public LevelData[] levelDataList;
+    // ─── Inspector ────────────────────────────────────────────────────────────
+    [Header("Data")]
+    [Tooltip("LevelData SO con audio e contenuto del canvas.")]
+    public LevelData levelData;
 
-    // ─── UI References ────────────────────────────────────────────────────────
-    [Header("Fade")]
-    [Tooltip("Full-screen black Image with a CanvasGroup component.")]
-    public CanvasGroup fadeCanvasGroup;
-
-    [Header("Loading Screen")]
-    [Tooltip("GameObject del canvas loading screen — disabilitato di default.")]
-    public GameObject loadingCanvas;
-
-    [Tooltip("Testo regole/descrizione del livello.")]
-    public TMPro.TMP_Text rulesBodyText;
-
-    [Tooltip("Barra di caricamento — Image tipo Filled.")]
-    public UnityEngine.UI.Image loadingBarFill;
-
-    [Tooltip("Testo 'Premi INVIO per continuare' — nascosto finché load < 90%.")]
-    public TMPro.TMP_Text pressEnterLabel;
+    [Header("Canvas")]
+    [Tooltip("Prefab del canvas loading screen — istanziato a runtime.")]
+    public GameObject loadingCanvasPrefab;
 
     [Header("Timing")]
-    [Tooltip("Seconds for the fade-to-black animation.")]
-    public float fadeDuration = 0.6f;
-
-    [Tooltip("Secondi minimi prima che INVIO sia accettato — dà tempo al player di leggere.")]
+    public float fadeDuration = 0.5f;
     public float minimumReadTime = 4f;
 
-    // ─── Private State ────────────────────────────────────────────────────────
-    private bool _readyToActivate = false;   // true when async ≥ 90% AND minimumReadTime elapsed
-    private bool _isTransitioning = false;   // guard against double-triggers
-    private int _pendingSceneIndex = -1;
+    // ─── Riferimenti canvas (trovati sul prefab istanziato) ───────────────────
+    private GameObject _loadingCanvasInstance;
+    private CanvasGroup _loadingCanvasGroup;
+    private CanvasGroup _fadeCanvasGroup;
+    private TMP_Text _headerText;
+    private TMP_Text _bodyText;
+    private TMP_Text _premiInvioText;
+    private Image _loadingBarFill;
+
+    // ─── Stato ────────────────────────────────────────────────────────────────
+    private bool _isTransitioning = false;
+
+    // Flag: questa scena è stata caricata tramite portal (true)
+    // o tramite reload diretto (false)?
+    private static bool _isReload = false;
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
     void Awake()
     {
-        // Per-scene singleton: destroy duplicates (e.g. if prefab appears twice)
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
 
-        if (loadingCanvas != null)
-            loadingCanvas.SetActive(false);
+        // Istanzia il canvas loading e trovane i riferimenti
+        if (loadingCanvasPrefab != null)
+        {
+            _loadingCanvasInstance = Instantiate(loadingCanvasPrefab);
+            DontDestroyOnLoad(_loadingCanvasInstance);
+            FindCanvasReferences();
+            _loadingCanvasInstance.SetActive(false);
+        }
 
-        // Fade canvas starts transparent
-        if (fadeCanvasGroup != null)
-            fadeCanvasGroup.alpha = 0f;
+        // Blocca input durante la loading screen
+        GameManager.Instance?.SetPaused(true);
 
-        // Fade IN when scene loads (screen was black from previous fade-out)
-        StartCoroutine(FadeIn());
+        // Avvia la loading screen all'avvio della scena
+        StartCoroutine(SceneStartRoutine());
     }
 
     void OnDestroy()
     {
-        // Clear singleton ref when this scene unloads
         if (Instance == this) Instance = null;
+        if (_loadingCanvasInstance != null)
+            Destroy(_loadingCanvasInstance);
     }
 
-    // ─── Public API ───────────────────────────────────────────────────────────
+    // ─── Avvio scena ─────────────────────────────────────────────────────────
+    private IEnumerator SceneStartRoutine()
+    {
+        // Mostra sempre la loading screen all'avvio della scena
+        // Questo gestisce sia il primo avvio (MainMenu) che ogni livello
+        yield return StartCoroutine(LoadingScreenRoutine());
+    }
 
-    /// <summary>
-    /// Entry point for portals. Called by PortalController.cs.
-    /// targetSceneIndex: the Build Settings index of the destination scene.
-    /// </summary>
+    // ─── Loading Screen all'avvio ────────────────────────────────────────────
+    private IEnumerator LoadingScreenRoutine()
+    {
+        // Schermo parte nero (da FadeOut della scena precedente o dal primo avvio)
+        if (_fadeCanvasGroup != null)
+        {
+            _fadeCanvasGroup.gameObject.SetActive(true);
+            _fadeCanvasGroup.alpha = 1f;
+            _fadeCanvasGroup.blocksRaycasts = true;
+        }
+
+        // Popola e mostra loading canvas
+        PopulateCanvas(SceneManager.GetActiveScene().buildIndex);
+        if (_loadingCanvasInstance != null)
+            _loadingCanvasInstance.SetActive(true);
+
+        // Avvia musica loading
+        if (levelData?.loadingMusic != null)
+            AudioManager.Instance?.PlayLooping(levelData.loadingMusic, fadeIn: false);
+
+        // Fade in loading screen
+        yield return StartCoroutine(FadeCanvas(0f, 1f));
+        yield return StartCoroutine(Fade(1f, 0f));
+
+        // Nascondi "Premi INVIO" finché non è pronto
+        if (_premiInvioText != null) _premiInvioText.gameObject.SetActive(false);
+
+        // Simula barra che si riempie nel minimumReadTime
+        float elapsed = 0f;
+        while (elapsed < minimumReadTime)
+        {
+            elapsed += Time.deltaTime;
+            if (_loadingBarFill != null)
+                _loadingBarFill.fillAmount = Mathf.Clamp01(elapsed / minimumReadTime);
+            yield return null;
+        }
+
+        if (_loadingBarFill != null) _loadingBarFill.fillAmount = 1f;
+
+        // Mostra "Premi INVIO"
+        if (_premiInvioText != null) _premiInvioText.gameObject.SetActive(true);
+
+        // Attendi INVIO
+        yield return StartCoroutine(WaitForEnter());
+
+        // Stop loading music
+        AudioManager.Instance?.Stop(fadeOut: false);
+
+        // Fade out loading screen
+        yield return StartCoroutine(FadeCanvas(1f, 0f));
+        if (_loadingCanvasInstance != null)
+            _loadingCanvasInstance.SetActive(false);
+
+        // Fade in scena
+        yield return StartCoroutine(Fade(1f, 0f));
+
+        // Avvia gameplay music
+        if (levelData?.gameplayMusic != null)
+            AudioManager.Instance?.PlayLooping(levelData.gameplayMusic, fadeIn: true);
+
+        // Sblocca input
+        GameManager.Instance?.SetPaused(false);
+    }
+
+    // ─── API pubblica — chiamata da PortalController ──────────────────────────
     public void LoadLevel(int targetSceneIndex)
     {
         if (_isTransitioning) return;
         _isTransitioning = true;
-        _pendingSceneIndex = targetSceneIndex;
+        _isReload = false;
         StartCoroutine(TransitionRoutine(targetSceneIndex));
     }
 
-    // ─── Master Transition Coroutine ──────────────────────────────────────────
-
-    /// <summary>
-    /// Full sequence:
-    ///   1. Fade to black
-    ///   2. Show loading screen with LevelData content
-    ///   3. Begin async load in background
-    ///   4. Wait for async ≥ 90% AND minimumReadTime
-    ///   5. Show "Premi INVIO" label
-    ///   6. Wait for Enter key
-    ///   7. Activate scene
-    /// </summary>
+    // ─── Transizione completa ─────────────────────────────────────────────────
     private IEnumerator TransitionRoutine(int targetIndex)
     {
-        // ── Step 1: Disable player input during transition ─────────────────
-        // PlayerController listens to GameManager state; setting Paused blocks movement.
-        // We do NOT use Time.timeScale = 0 here — async loading needs real time.
+        // Blocca input
         GameManager.Instance?.SetPaused(true);
 
-        // ── Step 2: Fade to black ─────────────────────────────────────────
-        yield return StartCoroutine(FadeOut());
+        // Step 1 — Fade out
+        yield return StartCoroutine(Fade(0f, 1f));
 
-        // ── Step 3: Popola e mostra loading screen ───────────────────────
-        PopulateLoadingScreen(targetIndex);
-        if (loadingCanvas != null) loadingCanvas.SetActive(true);
-        yield return StartCoroutine(FadeIn());
+        // Step 2 — Popola e mostra loading canvas
+        PopulateCanvas(targetIndex);
+        if (_loadingCanvasInstance != null)
+            _loadingCanvasInstance.SetActive(true);
 
-        // ── Step 5: Begin async scene load (NOT activated yet) ────────────
+        // Step 3 — Avvia musica loading
+        if (levelData?.loadingMusic != null)
+            AudioManager.Instance?.PlayLooping(levelData.loadingMusic, fadeIn: false);
+
+        // Step 4 — Fade in loading screen
+        yield return StartCoroutine(FadeCanvas(0f, 1f));
+
+        // Nascondi "Premi INVIO" finché non è pronto
+        if (_premiInvioText != null) _premiInvioText.gameObject.SetActive(false);
+
+        // Step 5 — Carica scena in background
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(targetIndex);
         asyncLoad.allowSceneActivation = false;
 
-        if (pressEnterLabel != null)
-            pressEnterLabel.gameObject.SetActive(false);
+        float elapsed = 0f;
+        bool readyToActivate = false;
 
-        float elapsedReadTime = 0f;
-        _readyToActivate = false;
-
-        // ── Step 6: Wait for load ≥ 90% AND minimum read time ─────────────
-        while (!_readyToActivate)
+        // Step 6 — Attendi caricamento + tempo minimo
+        while (!readyToActivate)
         {
-            elapsedReadTime += Time.deltaTime;
+            elapsed += Time.deltaTime;
 
-            if (loadingBarFill != null)
-                loadingBarFill.fillAmount = Mathf.Clamp01(asyncLoad.progress / 0.9f);
+            // Barra: il più lento tra progresso async e timer
+            float asyncProgress = asyncLoad.progress / 0.9f;          // 0→1
+            float timerProgress = elapsed / minimumReadTime;           // 0→1
+            float barProgress = Mathf.Min(asyncProgress, timerProgress);
 
-            bool loadReady = asyncLoad.progress >= 0.9f;
-            bool readReady = elapsedReadTime >= minimumReadTime;
+            if (_loadingBarFill != null)
+                _loadingBarFill.fillAmount = Mathf.Clamp01(barProgress);
 
-            if (loadReady && readReady)
-                _readyToActivate = true;
+            if (asyncLoad.progress >= 0.9f && elapsed >= minimumReadTime)
+                readyToActivate = true;
 
             yield return null;
         }
 
-        // ── Step 7: Mostra "Premi INVIO" ─────────────────────────────────
-        if (pressEnterLabel != null) pressEnterLabel.gameObject.SetActive(true);
-        if (loadingBarFill != null) loadingBarFill.fillAmount = 1f;
+        // Barra al 100%
+        if (_loadingBarFill != null) _loadingBarFill.fillAmount = 1f;
 
-        // ── Step 8: Attendi INVIO ─────────────────────────────────────────
-        yield return StartCoroutine(WaitForEnterKey());
+        // Step 7 — Mostra "Premi INVIO"
+        if (_premiInvioText != null) _premiInvioText.gameObject.SetActive(true);
 
-        // ── Step 9: Fade to black before activation ────────────────────────
-        yield return StartCoroutine(FadeOut());
+        // Step 8 — Attendi INVIO
+        yield return StartCoroutine(WaitForEnter());
 
-        // ── Step 10: Re-enable normal game state, activate scene ──────────
+        // Step 9 — Stop loading music, avvia gameplay music
+        AudioManager.Instance?.Stop(fadeOut: false);
+        // La gameplay music parte in SceneStartRoutine() della nuova scena
+
+        // Step 10 — Fade out loading screen
+        yield return StartCoroutine(FadeCanvas(1f, 0f));
+        if (_loadingCanvasInstance != null)
+            _loadingCanvasInstance.SetActive(false);
+
+        // Step 11 — Fade out schermo (nero prima di attivare scena)
+        yield return StartCoroutine(Fade(0f, 1f));
+
+        // Step 12 — Attiva scena
         GameManager.Instance?.SetPaused(false);
         asyncLoad.allowSceneActivation = true;
-        // OnSceneLoaded in GameManager fires next, which restores HP, timers, etc.
-        // LevelManager in the NEW scene will FadeIn() from its own Awake().
+        // Il nuovo LevelManager farà FadeIn e avvierà la gameplayMusic
     }
 
-    // ─── Loading Screen Population ────────────────────────────────────────────
-    private void PopulateLoadingScreen(int targetSceneIndex)
+    // ─── Popola canvas con CanvasContentData ──────────────────────────────────
+    private void PopulateCanvas(int targetSceneIndex)
     {
-        LevelData data = GetLevelData(targetSceneIndex);
+        // Cerca il LevelData del livello di destinazione nel LevelManager
+        // della scena corrente — usa il proprio levelData come fallback
+        LevelData data = levelData;
 
-        if (data == null)
+        if (data?.canvasContent == null) return;
+
+        CanvasContentData content = data.canvasContent;
+
+        if (_headerText != null)
         {
-            Debug.LogWarning($"[LevelManager] No LevelData found for scene index {targetSceneIndex}.");
-
-            if (rulesBodyText != null) rulesBodyText.text = "";
-            return;
+            _headerText.text = $"<b><i>{content.header}</i></b>";
+            _headerText.gameObject.SetActive(!string.IsNullOrEmpty(content.header));
         }
 
-        if (rulesBodyText != null)
-            rulesBodyText.text = data.rulesText;
+        if (_bodyText != null)
+        {
+            _bodyText.text = $"<i>{content.testo}</i>";
+            _bodyText.gameObject.SetActive(!string.IsNullOrEmpty(content.testo));
+        }
 
-        // Avvia la musica del livello tramite AudioManager
-        if (data.musicClip != null)
-            AudioManager.Instance?.PlayMusic(data.musicClip);
+        if (_premiInvioText != null)
+            _premiInvioText.text = content.premiInvio;
     }
 
-    /// <summary>
-    /// Converts a scene build index into the matching LevelData slot.
-    /// Scene index 1 → slot 0, index 2 → slot 1, … index 6 → slot 5.
-    /// Scene index 0 (Main Menu) returns null — no loading screen needed.
-    /// </summary>
-    private LevelData GetLevelData(int sceneIndex)
+    // ─── Trova riferimenti nel canvas istanziato ──────────────────────────────
+    private void FindCanvasReferences()
     {
-        int slot = sceneIndex - 1;   // offset: scene 1 lives at slot 0
-        if (levelDataList == null || slot < 0 || slot >= levelDataList.Length)
+        if (_loadingCanvasInstance == null) return;
+
+        // CanvasGroup sul root del canvas (per fade)
+        _loadingCanvasGroup = _loadingCanvasInstance.GetComponent<CanvasGroup>();
+
+        // FadePanel — figlio con nome "FadePanel"
+        Transform fadePanel = _loadingCanvasInstance.transform.Find("FadePanel");
+        if (fadePanel != null)
+            _fadeCanvasGroup = fadePanel.GetComponent<CanvasGroup>();
+
+        // Testi — cercati per nome
+        _headerText = FindChild<TMP_Text>("HeaderText");
+        _bodyText = FindChild<TMP_Text>("BodyText");
+        _premiInvioText = FindChild<TMP_Text>("PremiInvioText");
+        _loadingBarFill = FindChild<Image>("LoadingBarFill");
+
+        if (_loadingBarFill == null)
+            Debug.LogWarning("[LevelManager] LoadingBarFill non trovato nel canvas prefab.");
+    }
+
+    private T FindChild<T>(string childName) where T : Component
+    {
+        if (_loadingCanvasInstance == null) return null;
+        Transform t = _loadingCanvasInstance.transform.Find(childName);
+        if (t == null)
+        {
+            // Cerca in profondità
+            foreach (T comp in _loadingCanvasInstance.GetComponentsInChildren<T>(true))
+                if (comp.gameObject.name == childName) return comp;
             return null;
-        return levelDataList[slot];
+        }
+        return t.GetComponent<T>();
     }
 
-    // ─── Fade Coroutines ──────────────────────────────────────────────────────
-
-    /// <summary>Fade screen to black (alpha 0 → 1).</summary>
-    private IEnumerator FadeOut()
+    // ─── Fade schermo (FadePanel) ─────────────────────────────────────────────
+    private IEnumerator Fade(float from, float to)
     {
-        if (fadeCanvasGroup == null) yield break;
+        if (_fadeCanvasGroup == null) yield break;
+
+        _fadeCanvasGroup.gameObject.SetActive(true);
+        _fadeCanvasGroup.blocksRaycasts = true;
 
         float elapsed = 0f;
-        fadeCanvasGroup.blocksRaycasts = true;
+        _fadeCanvasGroup.alpha = from;
 
         while (elapsed < fadeDuration)
         {
             elapsed += Time.deltaTime;
-            fadeCanvasGroup.alpha = Mathf.Clamp01(elapsed / fadeDuration);
+            _fadeCanvasGroup.alpha = Mathf.Lerp(from, to, elapsed / fadeDuration);
             yield return null;
         }
-        fadeCanvasGroup.alpha = 1f;
+
+        _fadeCanvasGroup.alpha = to;
+        if (to <= 0f) _fadeCanvasGroup.blocksRaycasts = false;
     }
 
-    /// <summary>Fade screen in from black (alpha 1 → 0).</summary>
-    private IEnumerator FadeIn()
+    // ─── Fade canvas loading screen (CanvasGroup root) ────────────────────────
+    private IEnumerator FadeCanvas(float from, float to)
     {
-        if (fadeCanvasGroup == null) yield break;
+        if (_loadingCanvasGroup == null) yield break;
 
         float elapsed = 0f;
-        fadeCanvasGroup.blocksRaycasts = true;
+        _loadingCanvasGroup.alpha = from;
 
         while (elapsed < fadeDuration)
         {
             elapsed += Time.deltaTime;
-            fadeCanvasGroup.alpha = Mathf.Clamp01(1f - (elapsed / fadeDuration));
+            _loadingCanvasGroup.alpha = Mathf.Lerp(from, to, elapsed / fadeDuration);
             yield return null;
         }
 
-        fadeCanvasGroup.alpha = 0f;
-        fadeCanvasGroup.blocksRaycasts = false;
+        _loadingCanvasGroup.alpha = to;
     }
 
-    // ─── Input Wait ───────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Waits until the player presses Enter / Return.
-    /// Uses the legacy Input API intentionally — this fires even when
-    /// the New Input System's Action Maps are disabled during pause state.
-    /// </summary>
-    private IEnumerator WaitForEnterKey()
+    // ─── Attendi INVIO ────────────────────────────────────────────────────────
+    private IEnumerator WaitForEnter()
     {
-        // Flush any Enter press that may already be queued from this frame
-        yield return null;
+        yield return null;   // flush frame
 
-        while (!Input.GetKeyDown(KeyCode.Return) && !Input.GetKeyDown(KeyCode.KeypadEnter))
+        var keyboard = Keyboard.current;
+        if (keyboard == null)
+        {
+            Debug.LogWarning("[LevelManager] Nessuna tastiera rilevata.");
+            yield break;
+        }
+
+        while (!keyboard.enterKey.wasPressedThisFrame &&
+               !keyboard.numpadEnterKey.wasPressedThisFrame)
             yield return null;
     }
 
     // ─── Debug ────────────────────────────────────────────────────────────────
 #if UNITY_EDITOR
     [ContextMenu("DEBUG — Load Next Level")]
-    private void Debug_LoadNext()
-    {
-        int next = SceneManager.GetActiveScene().buildIndex + 1;
-        LoadLevel(next);
-    }
-
-    [ContextMenu("DEBUG — Reload Current Level")]
-    private void Debug_ReloadCurrent()
-    {
-        LoadLevel(SceneManager.GetActiveScene().buildIndex);
-    }
+    private void Debug_LoadNext() =>
+        LoadLevel(SceneManager.GetActiveScene().buildIndex + 1);
 #endif
 }

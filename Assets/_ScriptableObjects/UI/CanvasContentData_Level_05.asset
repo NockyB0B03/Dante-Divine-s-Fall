@@ -9,11 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fd116d0a8e64446418d02e0ec5e4f08f, type: 3}
-  m_Name: LevelData_Level_2
+  m_Script: {fileID: 11500000, guid: 5fc5ab93533206446b0f2d05e8501eb9, type: 3}
+  m_Name: CanvasContentData_Level_05
   m_EditorClassIdentifier: 
-  levelName: Level Name
-  levelSubtitle: 
-  rulesText: Describe the level rules here.
-  backgroundSprite: {fileID: 0}
-  musicClip: {fileID: 0}
+  header: TITOLO LIVELLO
+  testo: Descrizione del livello.
+  premiInvio: Premi INVIO per continuare

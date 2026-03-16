@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd116d0a8e64446418d02e0ec5e4f08f, type: 3}
+  m_Name: LevelData_Level_06
+  m_EditorClassIdentifier: 
+  canvasContent: {fileID: 0}
+  loadingMusic: {fileID: 0}
+  gameplayMusic: {fileID: 0}
+  deathMusic: {fileID: 0}

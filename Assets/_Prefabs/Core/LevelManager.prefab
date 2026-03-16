@@ -25,7 +25,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1442623196459303394}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 51.091087, y: 8.454724, z: 23.55178}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -44,16 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3bd87477aee5ab842a11609de79e245a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  levelDataList:
-  - {fileID: 11400000, guid: 3c40d57f0754aa14a87ac9854be6f17e, type: 2}
-  - {fileID: 11400000, guid: 699facc7feb363e4e81f808847062d6c, type: 2}
-  - {fileID: 11400000, guid: bd1bfae16f0a7f1429e7a6a0e3726c98, type: 2}
-  - {fileID: 11400000, guid: f846d6b60e9172d4ebc79ab3cfc20839, type: 2}
-  - {fileID: 11400000, guid: 106adb3ef243f4745b32ca141bb4344c, type: 2}
-  fadeCanvasGroup: {fileID: 0}
-  loadingCanvas: {fileID: 0}
-  rulesBodyText: {fileID: 0}
-  loadingBarFill: {fileID: 0}
-  pressEnterLabel: {fileID: 0}
+  levelData: {fileID: 11400000, guid: 717c0f0ecfc3563459d1493e6b8276cb, type: 2}
+  loadingCanvasPrefab: {fileID: 7027861737521559154, guid: 9c623dab66f5b80488a670768b1dcc35, type: 3}
   fadeDuration: 0.6
   minimumReadTime: 1.5

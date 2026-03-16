@@ -238,11 +238,17 @@ public class DeathManager : MonoBehaviour
             _deathCanvasGroup.interactable = true;
             _deathCanvasGroup.blocksRaycasts = true;
         }
+
+        // Avvia musica di morte
+        LevelData data = LevelManager.Instance?.levelData;
+        if (data?.deathMusic != null)
+            AudioManager.Instance?.PlayLooping(data.deathMusic, fadeIn: true);
     }
 
     // ─── Bottoni ──────────────────────────────────────────────────────────────
     public void RestartLevel()
     {
+        AudioManager.Instance?.Stop(fadeOut: false);
         Time.timeScale = 1f;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -251,6 +257,7 @@ public class DeathManager : MonoBehaviour
 
     public void GoToMainMenu()
     {
+        AudioManager.Instance?.Stop(fadeOut: false);
         Time.timeScale = 1f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
