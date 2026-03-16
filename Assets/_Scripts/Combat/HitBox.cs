@@ -61,7 +61,14 @@ public class HitBox : MonoBehaviour
     public void SetActive(bool active)
     {
         if (active)
-            _hitThisSwing.Clear();   // nuovo swing — resetta i nemici già colpiti
+        {
+            _hitThisSwing.Clear();
+            Debug.Log($"[HitBox] ABILITATA — pos={transform.position} worldPos={transform.TransformPoint(GetComponent<BoxCollider>()?.center ?? Vector3.zero)}");
+        }
+        else
+        {
+            Debug.Log("[HitBox] disabilitata");
+        }
 
         gameObject.SetActive(active);
     }
@@ -69,17 +76,45 @@ public class HitBox : MonoBehaviour
     // ─── Collision ────────────────────────────────────────────────────────────
     void OnTriggerEnter(Collider other)
     {
+        Debug.Log($"[HitBox] OnTriggerEnter: {other.gameObject.name} layer={LayerMask.LayerToName(other.gameObject.layer)}");
 
-        Debug.Log($"[HitBox] Colpito: {other.gameObject.name} layer={other.gameObject.layer}");
-
-
-        // Evita di colpire lo stesso nemico due volte per swing
         if (_hitThisSwing.Contains(other.gameObject)) return;
 
-        // Delega il danno a DamageDealer
         bool hit = _damageDealer.TryDealDamage(other);
+        Debug.Log($"[HitBox] TryDealDamage su {other.gameObject.name}: {(hit ? "COLPITO" : "mancato — layer o Health mancante")}");
+
         if (hit)
             _hitThisSwing.Add(other.gameObject);
+    }
+
+    // ─── OverlapBox manuale ogni frame quando attiva ───────────────────────────
+    // Fallback per CharacterController che non genera OnTriggerEnter con altri trigger
+    void Update()
+    {
+        if (!gameObject.activeInHierarchy) return;
+
+        BoxCollider box = GetComponent<BoxCollider>();
+        if (box == null) return;
+
+        Collider[] hits = Physics.OverlapBox(
+            transform.TransformPoint(box.center),
+            box.size * 0.5f,
+            transform.rotation);
+
+        foreach (var hit in hits)
+        {
+            if (hit.gameObject == gameObject) continue;
+            if (_hitThisSwing.Contains(hit.gameObject)) continue;
+
+            Debug.Log($"[HitBox] OverlapBox trova: {hit.gameObject.name} layer={LayerMask.LayerToName(hit.gameObject.layer)}");
+
+            bool dealt = _damageDealer.TryDealDamage(hit);
+            if (dealt)
+            {
+                Debug.Log($"[HitBox] DANNO applicato a {hit.gameObject.name}");
+                _hitThisSwing.Add(hit.gameObject);
+            }
+        }
     }
 
     // ─── Gizmo ────────────────────────────────────────────────────────────────

@@ -74,6 +74,10 @@ public class LuciferBoss : EnemyBase
     [Header("Fase 2 — Moltiplicatore velocità attacchi")]
     public float phase2SpeedMultiplier = 1.6f;
 
+    [Header("Rotazione")]
+    [Tooltip("Velocità di rotazione verso il player in gradi/secondo.")]
+    public float rotationSpeed = 90f;
+
     // ─── Privati ──────────────────────────────────────────────────────────────
     private Phase _currentPhase = Phase.One;
     private bool _phaseTransitioning = false;
@@ -84,7 +88,31 @@ public class LuciferBoss : EnemyBase
     // ─── Lifecycle ────────────────────────────────────────────────────────────
     protected override void Awake()
     {
-        base.Awake();   // inizializza EnemyHealth, EnemyAnimator, PlayerTransform
+        base.Awake();
+    }
+
+    void Update()
+    {
+        if (IsDead || PlayerTransform == null) return;
+        RotateTowardPlayer();
+    }
+
+    /// <summary>
+    /// Ruota Lucifero su se stesso in modo che il forward punti sempre verso Dante.
+    /// Solo sull'asse Y — Lucifero non si inclina mai.
+    /// </summary>
+    private void RotateTowardPlayer()
+    {
+        Vector3 direction = PlayerTransform.position - transform.position;
+        direction.y = 0f;   // solo rotazione orizzontale
+
+        if (direction == Vector3.zero) return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+        transform.rotation = Quaternion.RotateTowards(
+            transform.rotation,
+            targetRotation,
+            rotationSpeed * Time.deltaTime);
     }
 
     protected override void Start()

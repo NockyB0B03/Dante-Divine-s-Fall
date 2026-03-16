@@ -130,14 +130,19 @@ public class PlayerAnimationBridge : MonoBehaviour
         if (damageDealer != null)
             damageDealer.CurrentComboIndex = index;
 
-        if (_animator != null)
+        // Usa l'Animator solo se ha un controller assegnato con stati configurati.
+        // Se il controller è vuoto o mancante, usa la PunchTimerRoutine (demo mode).
+        bool hasAnimatorController = _animator != null &&
+                                     _animator.runtimeAnimatorController != null &&
+                                     _animator.layerCount > 0;
+
+        if (hasAnimatorController)
         {
-            // Modalità normale — Animator presente, usa i trigger
             _animator.SetTrigger(punchTriggers[index]);
         }
         else
         {
-            // Demo mode — nessun Animator, usa timer per hitbox e fine attacco
+            // Demo mode — timer simula gli Animation Events
             StartCoroutine(PunchTimerRoutine());
         }
     }

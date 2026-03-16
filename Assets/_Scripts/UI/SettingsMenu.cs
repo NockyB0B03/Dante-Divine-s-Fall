@@ -51,23 +51,23 @@ public class SettingsMenu : MonoBehaviour
 
     // ─── PlayerPrefs Keys ─────────────────────────────────────────────────────
     private const string KEY_SENSITIVITY = "MouseSensitivity";
-    private const string KEY_VOLUME      = "AudioVolume";
+    private const string KEY_VOLUME = "AudioVolume";
 
     // ─── Valori default ───────────────────────────────────────────────────────
-    private const float DEFAULT_SENSITIVITY = 1f;
-    private const float DEFAULT_VOLUME      = 0.8f;
+    private const float DEFAULT_SENSITIVITY = 0.7f;
+    private const float DEFAULT_VOLUME = 0.8f;
 
     // ─── Inspector ────────────────────────────────────────────────────────────
     [Header("Canvas")]
     public GameObject settingsCanvas;
 
     [Header("Sensitivity")]
-    public Slider    sensitivitySlider;
-    public TMP_Text  sensitivityValueText;
+    public Slider sensitivitySlider;
+    public TMP_Text sensitivityValueText;
 
     [Header("Volume")]
-    public Slider    volumeSlider;
-    public TMP_Text  volumeValueText;
+    public Slider volumeSlider;
+    public TMP_Text volumeValueText;
 
     [Header("Bottone")]
     public Button btnChiudi;
@@ -78,7 +78,7 @@ public class SettingsMenu : MonoBehaviour
 
     // ─── Proprietà pubblica ───────────────────────────────────────────────────
     public float MouseSensitivity { get; private set; }
-    public float AudioVolume      { get; private set; }
+    public float AudioVolume { get; private set; }
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
     void Awake()
@@ -118,14 +118,14 @@ public class SettingsMenu : MonoBehaviour
         {
             sensitivitySlider.minValue = 0.1f;
             sensitivitySlider.maxValue = 5f;
-            sensitivitySlider.value    = MouseSensitivity;
+            sensitivitySlider.value = MouseSensitivity;
         }
 
         if (volumeSlider != null)
         {
             volumeSlider.minValue = 0f;
             volumeSlider.maxValue = 1f;
-            volumeSlider.value    = AudioVolume;
+            volumeSlider.value = AudioVolume;
         }
 
         UpdateValueTexts();
@@ -150,8 +150,8 @@ public class SettingsMenu : MonoBehaviour
 
         if (_canvasGroup != null)
         {
-            _canvasGroup.alpha          = 1f;
-            _canvasGroup.interactable   = true;
+            _canvasGroup.alpha = 1f;
+            _canvasGroup.interactable = true;
             _canvasGroup.blocksRaycasts = true;
         }
     }
@@ -166,8 +166,8 @@ public class SettingsMenu : MonoBehaviour
 
         if (_canvasGroup != null)
         {
-            _canvasGroup.alpha          = 0f;
-            _canvasGroup.interactable   = false;
+            _canvasGroup.alpha = 0f;
+            _canvasGroup.interactable = false;
             _canvasGroup.blocksRaycasts = false;
         }
     }
@@ -203,7 +203,7 @@ public class SettingsMenu : MonoBehaviour
         {
             // Scala la velocità degli assi X e Y per la sensibilità
             _freeLook.m_XAxis.m_MaxSpeed = 300f * MouseSensitivity;
-            _freeLook.m_YAxis.m_MaxSpeed = 2f   * MouseSensitivity;
+            _freeLook.m_YAxis.m_MaxSpeed = 2f * MouseSensitivity;
         }
     }
 
@@ -226,13 +226,13 @@ public class SettingsMenu : MonoBehaviour
     private void LoadSettings()
     {
         MouseSensitivity = PlayerPrefs.GetFloat(KEY_SENSITIVITY, DEFAULT_SENSITIVITY);
-        AudioVolume      = PlayerPrefs.GetFloat(KEY_VOLUME,      DEFAULT_VOLUME);
+        AudioVolume = PlayerPrefs.GetFloat(KEY_VOLUME, DEFAULT_VOLUME);
     }
 
     private void SaveSettings()
     {
         PlayerPrefs.SetFloat(KEY_SENSITIVITY, MouseSensitivity);
-        PlayerPrefs.SetFloat(KEY_VOLUME,      AudioVolume);
+        PlayerPrefs.SetFloat(KEY_VOLUME, AudioVolume);
         PlayerPrefs.Save();
     }
 }
