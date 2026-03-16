@@ -7,81 +7,98 @@ using Cinemachine;
 /// <summary>
 /// DANTE: DIVINE'S FALL — DeathManager.cs
 /// ─────────────────────────────────────────────────────────────────────────────
-/// Gestisce la sequenza di morte per caduta libera:
-///   1. Dante cade per fallDeathTime secondi
-///   2. Camera si stacca dal FreeLook e segue Dante dall'alto guardando verso il basso
-///   3. Fade nero
-///   4. Canvas di morte con bottoni Riprendi / Main Menu
+/// Gestisce due tipi di morte:
 ///
-/// STRUTTURA PREFAB DANTE:
-///   Dante (root)
-///   ├── DeathManager        ← questo script
-///   └── DeathCanvas         ← Canvas (Screen Space Overlay)
+/// MORTE PER CADUTA:
+///   Dante cade per fallDeathTime secondi con velocità < fallVelocityThreshold
+///   → Camera si stacca dal FreeLook e segue Dante dall'alto
+///   → Fade nero → DeathCanvas
+///
+/// MORTE PER HP (chiamata da Health.cs):
+///   Health chiama OnHealthDeath() pubblico
+///   → Camera si blocca + zoom out verso l'alto per deathAnimDuration secondi
+///   → Fade nero → DeathCanvas
+///
+/// DEATH CANVAS:
+///   - Gioco in pausa (Time.timeScale = 0)
+///   - Cursore visibile
+///   - deathMusic dal LevelData tramite AudioManager
+///   - BtnRetry: riprova il livello (timer continua)
+///   - BtnMainMenu: torna al MainMenu (timer azzerato)
+///
+/// SETUP NEL PREFAB DANTE:
+///   Dante
+///   ├── DeathManager.cs      ← su GameObject figlio "DeathManager"
+///   └── DeathCanvas          ← Canvas SO Overlay, Sort Order 100, disabilitato
+///       ├── FadePanel        ← Image nera fullscreen + CanvasGroup (alpha 0)
 ///       └── Panel
-///           ├── TitleText   "SEI MORTO"
-///           ├── BtnRiprendi
+///           ├── TitleText    "SEI MORTO"
+///           ├── BtnRetry
 ///           └── BtnMainMenu
 ///
+/// COLLEGA HEALTH A DEATHMANAGER:
+///   Su Health.cs → OnDeath UnityEvent → DeathManager.OnHealthDeath()
+///
 /// INSPECTOR:
-///   deathCanvas        → Canvas di morte figlio di Dante
-///   btnRiprendi        → bottone Riprendi
-///   btnMainMenu        → bottone Main Menu
-///   freeLookCamera     → CM FreeLook1 nella scena (trovato automaticamente se null)
-///   fallDeathTime      → secondi di caduta prima della sequenza (default 3)
-///   cameraDetachSpeed  → velocità con cui la camera sale e guarda in basso (default 2)
-///   fadeDuration       → durata fade nero (default 1)
+///   deathCanvas          → Canvas di morte figlio di Dante
+///   fadeCanvasGroup      → CanvasGroup di FadePanel
+///   btnRetry             → bottone Riprova
+///   btnMainMenu          → bottone Main Menu
+///   fallDeathTime        → secondi caduta prima della morte (default 3)
+///   fallVelocityThreshold→ velocità Y minima per contare caduta (default -8)
+///   deathAnimDuration    → secondi di animazione morte da HP prima del fade (default 2)
+///   cameraZoomOutSpeed   → velocità zoom out camera durante morte da HP (default 1.5)
+///   cameraZoomOutHeight  → unità di zoom out verso l'alto (default 4)
+///   cameraFollowSpeed    → velocità camera che segue Dante in caduta (default 2)
+///   cameraHeightOffset   → offset verticale camera durante caduta (default 3)
+///   fadeDuration         → durata fade nero (default 1)
 /// </summary>
 public class DeathManager : MonoBehaviour
 {
+    // ─── Inspector ────────────────────────────────────────────────────────────
     [Header("UI")]
     public GameObject deathCanvas;
-    public Button btnRiprendi;
+    public CanvasGroup fadeCanvasGroup;
+    public Button btnRetry;
     public Button btnMainMenu;
 
-    [Header("Camera")]
-    [Tooltip("CM FreeLook1 — trovato automaticamente se lasciato vuoto.")]
-    public CinemachineFreeLook freeLookCamera;
-
-    [Tooltip("Offset verticale della camera sopra Dante durante la sequenza cinematica.")]
-    public float cameraHeightOffset = 3f;
-
+    [Header("Caduta")]
+    [Tooltip("Secondi di caduta libera prima della morte.")]
+    public float fallDeathTime = 3f;
+    [Tooltip("Velocità Y negativa minima per contare come caduta.")]
+    public float fallVelocityThreshold = -8f;
     [Tooltip("Velocità con cui la camera segue Dante durante la caduta.")]
     public float cameraFollowSpeed = 2f;
+    [Tooltip("Offset verticale della camera sopra Dante durante la caduta.")]
+    public float cameraHeightOffset = 3f;
+
+    [Header("Morte da HP")]
+    [Tooltip("Secondi di animazione morte prima del fade (tempo per animazione Death).")]
+    public float deathAnimDuration = 2f;
+    [Tooltip("Velocità zoom out della camera verso l'alto durante morte da HP.")]
+    public float cameraZoomOutSpeed = 1.5f;
+    [Tooltip("Unità di zoom out verso l'alto della camera durante morte da HP.")]
+    public float cameraZoomOutHeight = 4f;
 
     [Header("Timing")]
-    [Tooltip("Secondi di caduta libera prima di triggerare la sequenza di morte.")]
-    public float fallDeathTime = 3f;
-
-    [Tooltip("Durata del fade nero in secondi.")]
     public float fadeDuration = 1f;
-
-    [Header("Fade")]
-    [Tooltip("CanvasGroup del pannello nero per il fade — cercato nel DeathCanvas se null.")]
-    public CanvasGroup fadeCanvasGroup;
 
     // ─── Privati ──────────────────────────────────────────────────────────────
     private PlayerController _playerController;
-    private Health _health;
-    private CanvasGroup _deathCanvasGroup;
+    private CinemachineFreeLook _freeLook;
     private Camera _mainCamera;
+    private CanvasGroup _deathCanvasGroup;
 
     private float _fallTimer = 0f;
-    private bool _isFalling = false;
     private bool _sequenceStarted = false;
-    private bool _isDead = false;
-
-    // Posizione e rotazione della camera al momento del distacco
-    private Vector3 _detachedCamPos;
-    private Quaternion _detachedCamRot;
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
     void Awake()
     {
         _playerController = GetComponentInParent<PlayerController>();
-        _health = GetComponentInParent<Health>();
         _mainCamera = Camera.main;
 
-        // Setup DeathCanvas
+        // Setup DeathCanvas — parte disabilitato
         if (deathCanvas != null)
         {
             _deathCanvasGroup = deathCanvas.GetComponent<CanvasGroup>();
@@ -94,56 +111,44 @@ public class DeathManager : MonoBehaviour
             deathCanvas.SetActive(false);
         }
 
-        // Setup FadePanel — cerca dentro DeathCanvas se non assegnato
-        if (fadeCanvasGroup == null && deathCanvas != null)
+        // FadePanel parte invisibile
+        if (fadeCanvasGroup != null)
         {
-            Transform fadePanel = deathCanvas.transform.Find("FadePanel");
-            if (fadePanel != null)
-                fadeCanvasGroup = fadePanel.GetComponent<CanvasGroup>();
+            fadeCanvasGroup.alpha = 0f;
+            fadeCanvasGroup.blocksRaycasts = false;
+            fadeCanvasGroup.gameObject.SetActive(false);
         }
     }
 
     void Start()
     {
-        // Trova FreeLook automaticamente se non assegnato
-        if (freeLookCamera == null)
-            freeLookCamera = FindObjectOfType<CinemachineFreeLook>();
+        _freeLook = FindObjectOfType<CinemachineFreeLook>();
 
-        btnRiprendi?.onClick.AddListener(RestartLevel);
-        btnMainMenu?.onClick.AddListener(GoToMainMenu);
+        btnRetry?.onClick.AddListener(OnRetry);
+        btnMainMenu?.onClick.AddListener(OnMainMenu);
     }
 
     void OnDestroy()
     {
-        btnRiprendi?.onClick.RemoveListener(RestartLevel);
-        btnMainMenu?.onClick.RemoveListener(GoToMainMenu);
+        btnRetry?.onClick.RemoveListener(OnRetry);
+        btnMainMenu?.onClick.RemoveListener(OnMainMenu);
     }
 
-    [Tooltip("Velocità verticale negativa minima per iniziare a contare la caduta. " +
-             "Aumenta se il terreno irregolare causa falsi positivi (default -8).")]
-    public float fallVelocityThreshold = -8f;
-
-    // Terrain layer gestito da PlayerController.IsOverTerrain
-
+    // ─── Update — rilevamento caduta ──────────────────────────────────────────
     void Update()
     {
-        if (_sequenceStarted || _isDead) return;
+        if (_sequenceStarted) return;
         if (_playerController == null) return;
 
-        // Caduta libera reale: non a terra E velocità Y sotto la soglia
         bool falling = !_playerController.IsGrounded &&
-                       _playerController.VerticalVelocity < fallVelocityThreshold;
+                       _playerController.VerticalVelocity < fallVelocityThreshold &&
+                       !_playerController.IsOverTerrain;
 
         if (falling)
         {
-            // Se sotto Dante c'è un Terrain — nessuna morte per caduta
-            if (_playerController.IsOverTerrain) { _fallTimer = 0f; return; }
             _fallTimer += Time.deltaTime;
             if (_fallTimer >= fallDeathTime)
-            {
-                _sequenceStarted = true;
-                StartCoroutine(DeathSequence());
-            }
+                TriggerFallDeath();
         }
         else
         {
@@ -151,27 +156,38 @@ public class DeathManager : MonoBehaviour
         }
     }
 
-    // ─── Sequenza di morte ────────────────────────────────────────────────────
-    private IEnumerator DeathSequence()
+    // ─── API pubblica — chiamata da Health.OnDeath ────────────────────────────
+    /// <summary>
+    /// Chiamato da Health.cs tramite OnDeath UnityEvent quando gli HP arrivano a 0.
+    /// Collega in Inspector: Health → OnDeath → DeathManager.OnHealthDeath
+    /// </summary>
+    public void OnHealthDeath()
     {
-        _isDead = true;
+        if (_sequenceStarted) return;
+        _sequenceStarted = true;
+        StartCoroutine(HealthDeathSequence());
+    }
 
-        // Blocca il movimento di Dante
+    // ─── Trigger caduta ───────────────────────────────────────────────────────
+    private void TriggerFallDeath()
+    {
+        if (_sequenceStarted) return;
+        _sequenceStarted = true;
+        StartCoroutine(FallDeathSequence());
+    }
+
+    // ─── Sequenza morte per caduta ────────────────────────────────────────────
+    private IEnumerator FallDeathSequence()
+    {
+        // Blocca input Dante
         if (_playerController != null)
             _playerController.IsAbilityCasting = true;
 
-        // Disabilita FreeLook — la Main Camera si muove manualmente
-        if (freeLookCamera != null)
-            freeLookCamera.gameObject.SetActive(false);
+        // Disabilita FreeLook — camera si muove manualmente
+        if (_freeLook != null)
+            _freeLook.gameObject.SetActive(false);
 
-        // Posizione iniziale della camera — sopra Dante
-        if (_mainCamera != null)
-        {
-            _detachedCamPos = _mainCamera.transform.position;
-            _detachedCamRot = _mainCamera.transform.rotation;
-        }
-
-        // ── Step 1: Camera segue Dante dall'alto per fadeDuration secondi ────
+        // Camera segue Dante dall'alto per cinematicDuration secondi
         float elapsed = 0f;
         float cinematicDuration = fadeDuration * 0.8f;
 
@@ -181,93 +197,123 @@ public class DeathManager : MonoBehaviour
 
             if (_mainCamera != null && _playerController != null)
             {
-                // Posizione target — sopra Dante
                 Vector3 targetPos = _playerController.transform.position +
                                     Vector3.up * cameraHeightOffset;
-
-                // Rotazione target — guarda verso il basso su Dante
                 Quaternion targetRot = Quaternion.LookRotation(
                     _playerController.transform.position - _mainCamera.transform.position);
 
-                // Lerp fluido verso la posizione target
                 _mainCamera.transform.position = Vector3.Lerp(
                     _mainCamera.transform.position, targetPos,
                     cameraFollowSpeed * Time.deltaTime);
-
                 _mainCamera.transform.rotation = Quaternion.Slerp(
                     _mainCamera.transform.rotation, targetRot,
                     cameraFollowSpeed * Time.deltaTime);
             }
-
             yield return null;
         }
 
-        // ── Step 2: Fade nero ─────────────────────────────────────────────────
-        yield return StartCoroutine(FadeToBlack());
+        yield return StartCoroutine(FadeAndShowCanvas());
+    }
 
-        // ── Step 3: Mostra canvas di morte ────────────────────────────────────
+    // ─── Sequenza morte per HP ────────────────────────────────────────────────
+    private IEnumerator HealthDeathSequence()
+    {
+        // Blocca input Dante
+        if (_playerController != null)
+            _playerController.IsAbilityCasting = true;
+
+        // Blocca FreeLook nella posizione corrente
+        if (_freeLook != null)
+            _freeLook.enabled = false;
+
+        // Zoom out verso l'alto della camera
+        if (_mainCamera != null)
+        {
+            Vector3 startPos = _mainCamera.transform.position;
+            Vector3 targetPos = startPos + Vector3.up * cameraZoomOutHeight;
+            float elapsed = 0f;
+
+            while (elapsed < deathAnimDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / deathAnimDuration);
+                _mainCamera.transform.position = Vector3.Lerp(
+                    startPos, targetPos, t * cameraZoomOutSpeed * Time.deltaTime);
+                yield return null;
+            }
+        }
+        else
+        {
+            yield return new WaitForSeconds(deathAnimDuration);
+        }
+
+        yield return StartCoroutine(FadeAndShowCanvas());
+    }
+
+    // ─── Fade + canvas ────────────────────────────────────────────────────────
+    private IEnumerator FadeAndShowCanvas()
+    {
+        // Fade a nero
+        if (fadeCanvasGroup != null)
+        {
+            fadeCanvasGroup.gameObject.SetActive(true);
+            fadeCanvasGroup.blocksRaycasts = true;
+            float elapsed = 0f;
+
+            while (elapsed < fadeDuration)
+            {
+                elapsed += Time.deltaTime;
+                fadeCanvasGroup.alpha = Mathf.Clamp01(elapsed / fadeDuration);
+                yield return null;
+            }
+            fadeCanvasGroup.alpha = 1f;
+        }
+
+        // Pausa, cursore, canvas
+        Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        Time.timeScale = 0f;
 
-        ShowDeathCanvas();
-    }
-
-    // ─── Fade ─────────────────────────────────────────────────────────────────
-    private IEnumerator FadeToBlack()
-    {
-        if (fadeCanvasGroup == null) yield break;
-
-        // Attiva il pannello nero
-        if (fadeCanvasGroup.gameObject != deathCanvas)
-            fadeCanvasGroup.gameObject.SetActive(true);
-
-        float elapsed = 0f;
-        while (elapsed < fadeDuration)
-        {
-            elapsed += Time.deltaTime;
-            fadeCanvasGroup.alpha = Mathf.Clamp01(elapsed / fadeDuration);
-            yield return null;
-        }
-        fadeCanvasGroup.alpha = 1f;
-    }
-
-    // ─── Death Canvas ─────────────────────────────────────────────────────────
-    private void ShowDeathCanvas()
-    {
-        if (deathCanvas == null) return;
-
-        deathCanvas.SetActive(true);
-
-        if (_deathCanvasGroup != null)
-        {
-            _deathCanvasGroup.alpha = 1f;
-            _deathCanvasGroup.interactable = true;
-            _deathCanvasGroup.blocksRaycasts = true;
-        }
-
-        // Avvia musica di morte
+        // Avvia deathMusic da LevelData
         LevelData data = LevelManager.Instance?.levelData;
         if (data?.deathMusic != null)
             AudioManager.Instance?.PlayLooping(data.deathMusic, fadeIn: true);
+
+        // Mostra DeathCanvas
+        if (deathCanvas != null)
+        {
+            deathCanvas.SetActive(true);
+            if (_deathCanvasGroup != null)
+            {
+                _deathCanvasGroup.alpha = 1f;
+                _deathCanvasGroup.interactable = true;
+                _deathCanvasGroup.blocksRaycasts = true;
+            }
+        }
     }
 
     // ─── Bottoni ──────────────────────────────────────────────────────────────
-    public void RestartLevel()
+
+    /// <summary>
+    /// Riprova il livello — timer di gioco continua (non viene azzerato).
+    /// </summary>
+    public void OnRetry()
     {
         AudioManager.Instance?.Stop(fadeOut: false);
         Time.timeScale = 1f;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        // Reload scena — GameManager.OnSceneLoaded mantiene il timer
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
-    public void GoToMainMenu()
+    /// <summary>
+    /// Torna al MainMenu — timer azzerato tramite GameManager.ReturnToMainMenu().
+    /// </summary>
+    public void OnMainMenu()
     {
         AudioManager.Instance?.Stop(fadeOut: false);
         Time.timeScale = 1f;
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-        SceneManager.LoadScene(0);
+        GameManager.Instance?.ReturnToMainMenu();
     }
 }

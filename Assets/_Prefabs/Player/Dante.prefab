@@ -649,15 +649,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   deathCanvas: {fileID: 6228254415038611666}
-  btnRiprendi: {fileID: 3941101844085282228}
-  btnMainMenu: {fileID: 5330933904761516632}
-  freeLookCamera: {fileID: 0}
-  cameraHeightOffset: 3
-  cameraFollowSpeed: 2
-  fallDeathTime: 3
-  fadeDuration: 1
   fadeCanvasGroup: {fileID: 1280621484953747177}
+  btnRetry: {fileID: 0}
+  btnMainMenu: {fileID: 5330933904761516632}
+  fallDeathTime: 3
   fallVelocityThreshold: -8
+  cameraFollowSpeed: 2
+  cameraHeightOffset: 3
+  deathAnimDuration: 2
+  cameraZoomOutSpeed: 1.5
+  cameraZoomOutHeight: 4
+  fadeDuration: 1
 --- !u!1 &1674979465610335215
 GameObject:
   m_ObjectHideFlags: 0
@@ -796,7 +798,19 @@ MonoBehaviour:
       m_Calls: []
   OnDeath:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 7322556719084548057}
+        m_TargetAssemblyTypeName: DeathManager, Assembly-CSharp
+        m_MethodName: OnHealthDeath
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &3119877875091587131
 MonoBehaviour:
   m_ObjectHideFlags: 0
