@@ -1123,6 +1123,10 @@ PrefabInstance:
       value: Lucifer
       objectReference: {fileID: 0}
     - target: {fileID: 3531605953328408129, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
+      propertyPath: spikeCount
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3531605953328408129, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
       propertyPath: destroyDelay
       value: 3
       objectReference: {fileID: 0}
@@ -1934,11 +1938,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7065670683487129777, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
       propertyPath: m_XAxis.m_MaxSpeed
-      value: 30
+      value: 276.745
       objectReference: {fileID: 0}
     - target: {fileID: 7065670683487129777, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
       propertyPath: m_YAxis.m_MaxSpeed
-      value: 0.2
+      value: 1.844967
       objectReference: {fileID: 0}
     - target: {fileID: 7065670683487129778, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
       propertyPath: m_Name
@@ -1946,27 +1950,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7065670683627668844, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
       propertyPath: m_FollowOffset.y
-      value: 0.6695014
+      value: 1.119761
       objectReference: {fileID: 0}
     - target: {fileID: 7065670683627668844, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
       propertyPath: m_FollowOffset.z
-      value: -4.443452
+      value: -4.992764
       objectReference: {fileID: 0}
     - target: {fileID: 7065670684286129030, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
       propertyPath: m_FollowOffset.y
-      value: 0.6695014
+      value: 1.119761
       objectReference: {fileID: 0}
     - target: {fileID: 7065670684286129030, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
       propertyPath: m_FollowOffset.z
-      value: -4.443452
+      value: -4.992764
       objectReference: {fileID: 0}
     - target: {fileID: 7065670684353396392, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
       propertyPath: m_FollowOffset.y
-      value: 0.6695014
+      value: 1.119761
       objectReference: {fileID: 0}
     - target: {fileID: 7065670684353396392, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
       propertyPath: m_FollowOffset.z
-      value: -4.443452
+      value: -4.992764
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
@@ -2849,7 +2853,7 @@ GameObject:
   - component: {fileID: 1900945621}
   - component: {fileID: 1900945623}
   - component: {fileID: 1900945622}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Terrain
   m_TagString: Untagged
   m_Icon: {fileID: 0}
