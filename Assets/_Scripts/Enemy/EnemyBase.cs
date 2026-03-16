@@ -63,20 +63,30 @@ public abstract class EnemyBase : MonoBehaviour
 
     protected virtual void Start()
     {
-        StartCoroutine(FindPlayerDelayed());
+        // Se il player è già registrato (es. Awake order favorevole) prendilo subito
+        if (GameManager.Instance?.Player != null)
+        {
+            PlayerTransform = GameManager.Instance.Player.transform;
+            Debug.Log($"[{GetType().Name}] Player trovato subito in Start: {PlayerTransform.name}");
+        }
+        else
+        {
+            // Altrimenti aspetta l'evento OnPlayerRegistered
+            GameManager.OnPlayerRegistered += OnPlayerRegisteredHandler;
+            Debug.Log($"[{GetType().Name}] In attesa di OnPlayerRegistered...");
+        }
     }
 
-    private IEnumerator FindPlayerDelayed()
+    private void OnPlayerRegisteredHandler(GameObject playerObject)
     {
-        // Aspetta un frame — garantisce che PlayerSpawnPoint.Awake()
-        // e GameManager.RegisterPlayer() siano già stati eseguiti
-        yield return null;
-        FindPlayer();
+        PlayerTransform = playerObject.transform;
+        GameManager.OnPlayerRegistered -= OnPlayerRegisteredHandler;
+        Debug.Log($"[{GetType().Name}] Player ricevuto via evento: {PlayerTransform.name}");
     }
 
     /// <summary>
     /// Cerca il player tramite GameManager.
-    /// Chiamabile anche dalle sottoclassi se PlayerTransform è null.
+    /// Chiamabile dalle sottoclassi se PlayerTransform è null.
     /// </summary>
     protected void FindPlayer()
     {
@@ -91,6 +101,9 @@ public abstract class EnemyBase : MonoBehaviour
         // Rimuove il listener per evitare chiamate su oggetti distrutti
         if (EnemyHealth != null)
             EnemyHealth.OnDeath.RemoveListener(HandleDeath);
+
+        // Disiscrive dall'evento player nel caso non sia stato ancora trovato
+        GameManager.OnPlayerRegistered -= OnPlayerRegisteredHandler;
     }
 
     // ─── Morte ────────────────────────────────────────────────────────────────

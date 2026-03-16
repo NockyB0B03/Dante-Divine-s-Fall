@@ -28,16 +28,16 @@ RectTransform:
   m_GameObject: {fileID: 342539829222313132}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.5545, y: 0.5545, z: 0.5545}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3992308193289684000}
   m_Father: {fileID: 3361822005792437558}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -80}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 0, y: 149}
   m_SizeDelta: {x: 412.7345, y: 81.2794}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &72408910206996069
@@ -650,7 +650,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   deathCanvas: {fileID: 6228254415038611666}
   fadeCanvasGroup: {fileID: 1280621484953747177}
-  btnRetry: {fileID: 0}
+  btnRetry: {fileID: 3941101844085282228}
   btnMainMenu: {fileID: 5330933904761516632}
   fallDeathTime: 3
   fallVelocityThreshold: -8
@@ -1338,7 +1338,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Riprendi
+  m_text: Riprova
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 82f6bd70a8e621648b45472092ed109b, type: 2}
   m_sharedMaterial: {fileID: 7143308221726061085, guid: 82f6bd70a8e621648b45472092ed109b, type: 2}
@@ -1890,15 +1890,15 @@ RectTransform:
   m_GameObject: {fileID: 5431834122156956434}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.50505, y: 0.50505, z: 0.50505}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3361822005792437558}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 218}
+  m_AnchorMin: {x: 0.5, y: 1}
+  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchoredPosition: {x: 0, y: -89}
   m_SizeDelta: {x: 1143.6008, y: 209.9606}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &94876117302743072
@@ -2089,6 +2089,7 @@ GameObject:
   - component: {fileID: 4052274368171450836}
   - component: {fileID: 3029071827537197700}
   - component: {fileID: 1949993083510497236}
+  - component: {fileID: 3947864998813061485}
   m_Layer: 5
   m_Name: DeathCanvas
   m_TagString: Untagged
@@ -2180,6 +2181,18 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!225 &3947864998813061485
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6228254415038611666}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &7450716409165525349
 GameObject:
   m_ObjectHideFlags: 0
@@ -2193,7 +2206,7 @@ GameObject:
   - component: {fileID: 4328963571356424755}
   - component: {fileID: 3941101844085282228}
   m_Layer: 5
-  m_Name: BtnRiprendi
+  m_Name: BtnRetry
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2208,16 +2221,16 @@ RectTransform:
   m_GameObject: {fileID: 7450716409165525349}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.55449, y: 0.55449, z: 0.55449}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6087779644213192410}
   m_Father: {fileID: 3361822005792437558}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -203}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 0, y: 81}
   m_SizeDelta: {x: 412.7345, y: 81.2794}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8857473482733182997
@@ -2329,7 +2342,7 @@ RectTransform:
   m_GameObject: {fileID: 7593179280745506757}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.57572, y: 0.57572, z: 0.57572}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3361822005792437558}
@@ -2337,7 +2350,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 75}
+  m_AnchoredPosition: {x: 0, y: 26}
   m_SizeDelta: {x: 732.7673, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6821834319594163508
@@ -2622,7 +2635,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

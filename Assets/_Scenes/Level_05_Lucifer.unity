@@ -1936,6 +1936,30 @@ PrefabInstance:
       propertyPath: m_Name
       value: FreeLook Camera
       objectReference: {fileID: 0}
+    - target: {fileID: 7065670683627668844, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
+      propertyPath: m_FollowOffset.y
+      value: 0.8463338
+      objectReference: {fileID: 0}
+    - target: {fileID: 7065670683627668844, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
+      propertyPath: m_FollowOffset.z
+      value: -4.747728
+      objectReference: {fileID: 0}
+    - target: {fileID: 7065670684286129030, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
+      propertyPath: m_FollowOffset.y
+      value: 0.8463338
+      objectReference: {fileID: 0}
+    - target: {fileID: 7065670684286129030, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
+      propertyPath: m_FollowOffset.z
+      value: -4.747728
+      objectReference: {fileID: 0}
+    - target: {fileID: 7065670684353396392, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
+      propertyPath: m_FollowOffset.y
+      value: 0.8463338
+      objectReference: {fileID: 0}
+    - target: {fileID: 7065670684353396392, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
+      propertyPath: m_FollowOffset.z
+      value: -4.747728
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
 --- !u!1001 &1325227074

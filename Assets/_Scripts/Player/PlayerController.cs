@@ -148,11 +148,8 @@ public class PlayerController : MonoBehaviour
     void Awake()
     {
         _cc = GetComponent<CharacterController>();
-        _animator = GetComponentInChildren<Animator>();
+        _animator = GetComponentInChildren<Animator>(true);
         _input = new PlayerInputActions();
-
-        // Registra Dante nel GameManager
-        GameManager.Instance?.RegisterPlayer(gameObject);
 
         if (cameraTransform == null)
             cameraTransform = Camera.main?.transform;
@@ -160,8 +157,20 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
-        // Secondo tentativo — Camera.main potrebbe non essere
-        // disponibile in Awake() se il FreeLook non è ancora inizializzato
+        // Start() viene chiamato dopo TUTTI gli Awake() — GameManager è già inizializzato
+        // RegisterPlayer qui garantisce che GameManager.Instance non sia null
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.RegisterPlayer(gameObject);
+            Debug.Log("[PlayerController] RegisterPlayer chiamato in Start.");
+        }
+        else
+        {
+            Debug.LogError("[PlayerController] GameManager.Instance è null in Start! " +
+                           "Aggiungi GameManager nella scena.");
+        }
+
+        // Secondo tentativo camera
         if (cameraTransform == null)
             cameraTransform = Camera.main?.transform;
 

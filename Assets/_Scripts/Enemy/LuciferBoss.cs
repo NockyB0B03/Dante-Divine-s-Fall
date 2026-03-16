@@ -89,7 +89,10 @@ public class LuciferBoss : EnemyBase
 
     protected override void Start()
     {
-        base.Start();   // chiama FindPlayer() — PlayerTransform è disponibile qui
+        // base.Start() iscrive EnemyBase a GameManager.OnPlayerRegistered
+        // PlayerTransform verrà assegnato quando il player si registra
+        // FireballLoop e SpinLoop aspettano internamente che PlayerTransform sia disponibile
+        base.Start();
 
         EnemyHealth.OnHealthChanged.AddListener(CheckPhaseTransition);
         StartCoroutine(FireballLoop());

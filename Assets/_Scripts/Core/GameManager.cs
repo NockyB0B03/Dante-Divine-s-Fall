@@ -43,6 +43,12 @@ public class GameManager : MonoBehaviour
     public static event Action<int> OnUltimateUsesChanged;
     public static event Action<float, float> OnTimerUpdated;
 
+    /// <summary>
+    /// Sparato da RegisterPlayer() quando Dante è disponibile in scena.
+    /// EnemyBase si iscrive per ricevere il Transform del player appena è pronto.
+    /// </summary>
+    public static event Action<GameObject> OnPlayerRegistered;
+
     // ─── Combat Gate ──────────────────────────────────────────────────────────
     public bool CombatUnlocked { get; private set; } = false;
 
@@ -125,6 +131,10 @@ public class GameManager : MonoBehaviour
 
         if (PlayerHealth == null)
             Debug.LogError("[GameManager] Player manca del componente Health!");
+
+        // Notifica tutti i nemici che il player è disponibile
+        OnPlayerRegistered?.Invoke(playerObject);
+        Debug.Log($"[GameManager] Player registrato: {playerObject.name}");
     }
 
     // ─── HP ───────────────────────────────────────────────────────────────────
