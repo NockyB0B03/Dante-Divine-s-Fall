@@ -23,6 +23,7 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public class GameManager : MonoBehaviour
 {
+
     // ─── Singleton ────────────────────────────────────────────────────────────
     public static GameManager Instance { get; private set; }
 
