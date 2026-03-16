@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using System;
 
 /// <summary>
 /// DANTE: DIVINE'S FALL — Health.cs
@@ -21,6 +22,8 @@ using UnityEngine.Events;
 /// </summary>
 public class Health : MonoBehaviour
 {
+    public static event Action<float> OnHealthChangedStatic;
+
     [Header("Config")]
     public float maxHealth = 100f;
     public bool destroyOnDeath = false;
