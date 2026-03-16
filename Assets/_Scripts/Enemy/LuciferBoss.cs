@@ -148,26 +148,60 @@ public class LuciferBoss : EnemyBase
     // ─── Fireball Loop ────────────────────────────────────────────────────────
     private IEnumerator FireballLoop()
     {
+        // Aspetta che PlayerTransform sia disponibile
+        float waitTimer = 0f;
+        while (PlayerTransform == null)
+        {
+            waitTimer += Time.deltaTime;
+            if (waitTimer > 5f)
+            {
+                Debug.LogError("[LuciferBoss] FireballLoop: PlayerTransform ancora null dopo 5s — loop interrotto.");
+                yield break;
+            }
+            yield return null;
+        }
+
+        Debug.Log($"[LuciferBoss] FireballLoop avviato. PlayerTransform={PlayerTransform.name} cooldown={fireballCooldown}s spawnPoints={fireballSpawnPoints?.Length ?? 0}");
+
         while (true)
         {
             yield return new WaitForSeconds(fireballCooldown);
-            if (_phaseTransitioning || PlayerTransform == null) continue;
+
+            if (_phaseTransitioning) { Debug.Log("[LuciferBoss] FireballLoop: skip — phase transitioning"); continue; }
+            if (PlayerTransform == null) { Debug.LogWarning("[LuciferBoss] FireballLoop: skip — PlayerTransform null"); continue; }
+
             if (LuciferFireballPool.Instance == null)
             {
-                Debug.LogError("[LuciferBoss] LuciferFireballPool non trovato nella scena!");
+                Debug.LogError("[LuciferBoss] FireballLoop: LuciferFireballPool.Instance è NULL! Aggiungi Pool_LuciferFireballs nella scena.");
                 continue;
             }
 
-            // Snapshot della posizione del player al momento del lancio
+            if (fireballSpawnPoints == null || fireballSpawnPoints.Length == 0)
+            {
+                Debug.LogError("[LuciferBoss] FireballLoop: fireballSpawnPoints è vuoto! Assegna almeno un punto di spawn in Inspector.");
+                continue;
+            }
+
             Vector3 lastKnownPlayerPos = PlayerTransform.position;
+            Debug.Log($"[LuciferBoss] FireballLoop: sparo verso {lastKnownPlayerPos} da {fireballSpawnPoints.Length} spawn point/s");
 
             foreach (var spawnPt in fireballSpawnPoints)
             {
-                GameObject fb = LuciferFireballPool.Instance.Get(
-                    spawnPt.position, spawnPt.rotation);
+                if (spawnPt == null) { Debug.LogWarning("[LuciferBoss] FireballLoop: uno spawn point è null — skip"); continue; }
+
+                GameObject fb = LuciferFireballPool.Instance.Get(spawnPt.position, spawnPt.rotation);
+
+                if (fb == null) { Debug.LogError("[LuciferBoss] FireballLoop: pool ha restituito null — prefab LuciferFireball non assegnato?"); continue; }
 
                 LuciferFireball fireball = fb.GetComponent<LuciferFireball>();
-                fireball?.LaunchToward(lastKnownPlayerPos);
+                if (fireball == null)
+                {
+                    Debug.LogError($"[LuciferBoss] FireballLoop: {fb.name} non ha LuciferFireball.cs!");
+                    continue;
+                }
+
+                fireball.LaunchToward(lastKnownPlayerPos);
+                Debug.Log($"[LuciferBoss] FireballLoop: fireball lanciato da {spawnPt.name} verso {lastKnownPlayerPos}");
             }
         }
     }
@@ -175,6 +209,8 @@ public class LuciferBoss : EnemyBase
     // ─── Spin Loop ────────────────────────────────────────────────────────────
     private IEnumerator SpinLoop()
     {
+        while (PlayerTransform == null) yield return null;
+
         while (true)
         {
             yield return new WaitForSeconds(spinCooldown);

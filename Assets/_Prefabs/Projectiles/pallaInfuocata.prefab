@@ -66,7 +66,7 @@ MonoBehaviour:
   damage: 20
   damageableLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 8
   impactVFXPrefab: {fileID: 0}
   OwnerPool: {fileID: 0}
   splashRadius: 0.5

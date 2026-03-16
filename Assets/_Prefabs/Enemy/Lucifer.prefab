@@ -77,7 +77,7 @@ MonoBehaviour:
   spinCooldown: 5
   spinRadius: 4
   spinDamage: 20
-  groundSpikePrefab: {fileID: 0}
+  groundSpikePrefab: {fileID: 1208772774634476038, guid: 4fe64ff46225d734db9a1d4c33937495, type: 3}
   spikeCooldown: 6
   spikeCount: 6
   spikeSpacing: 1.5
