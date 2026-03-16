@@ -1729,7 +1729,7 @@ Canvas:
   m_VertexColorAlwaysGammaSpace: 0
   m_AdditionalShaderChannelsFlag: 25
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: -1
   m_TargetDisplay: 0
 --- !u!114 &3189087973011392996
 MonoBehaviour:
@@ -1743,10 +1743,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
   m_MatchWidthOrHeight: 0
   m_PhysicalUnit: 3
@@ -3933,6 +3933,14 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 4918140044456094331}
     m_Modifications:
+    - target: {fileID: 3113594144513723805, guid: 698e785ea8c1014498dfa16ce538d0ee, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4653954264717776615, guid: 698e785ea8c1014498dfa16ce538d0ee, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7336013348602846337, guid: 698e785ea8c1014498dfa16ce538d0ee, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -4017,9 +4025,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7437300465642881605, guid: 698e785ea8c1014498dfa16ce538d0ee, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8416678929340246856, guid: 698e785ea8c1014498dfa16ce538d0ee, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8551884268419007445, guid: 698e785ea8c1014498dfa16ce538d0ee, type: 3}
       propertyPath: m_Name
       value: SettingCanvas
+      objectReference: {fileID: 0}
+    - target: {fileID: 8551884268419007445, guid: 698e785ea8c1014498dfa16ce538d0ee, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 698e785ea8c1014498dfa16ce538d0ee, type: 3}
