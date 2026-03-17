@@ -183,9 +183,10 @@ public class DeathManager : MonoBehaviour
         if (_playerController != null)
             _playerController.IsAbilityCasting = true;
 
-        // Disabilita FreeLook — camera si muove manualmente
+        // Disabilita il componente FreeLook (non il GameObject) —
+        // evita MissingReferenceException sui rig interni di Cinemachine
         if (_freeLook != null)
-            _freeLook.gameObject.SetActive(false);
+            _freeLook.enabled = false;
 
         // Camera segue Dante dall'alto per cinematicDuration secondi
         float elapsed = 0f;
@@ -222,7 +223,7 @@ public class DeathManager : MonoBehaviour
         if (_playerController != null)
             _playerController.IsAbilityCasting = true;
 
-        // Blocca FreeLook nella posizione corrente
+        // Disabilita il componente FreeLook (non il GameObject)
         if (_freeLook != null)
             _freeLook.enabled = false;
 

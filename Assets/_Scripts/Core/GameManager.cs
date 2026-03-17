@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Cinemachine;
 
 /// <summary>
 /// DANTE: DIVINE'S FALL — GameManager.cs
@@ -23,7 +24,6 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public class GameManager : MonoBehaviour
 {
-
     // ─── Singleton ────────────────────────────────────────────────────────────
     public static GameManager Instance { get; private set; }
 
@@ -33,6 +33,20 @@ public class GameManager : MonoBehaviour
     private const int COMBAT_UNLOCK_INDEX = 5;
     private const int VICTORY_SCENE_INDEX = 6;
     private const int ULTIMATE_USES_PER_PHASE = 2;
+
+    // ─── PlayerPrefs Keys ─────────────────────────────────────────────────────
+    private const string KEY_SENSITIVITY = "MouseSensitivity";
+    private const string KEY_VOLUME = "AudioVolume";
+
+    // ─── Impostazioni persistenti ─────────────────────────────────────────────
+    /// <summary>Sensibilità del mouse — persistente tra le scene.</summary>
+    public float MouseSensitivity { get; private set; } = 0.7f;
+
+    /// <summary>Volume audio — persistente tra le scene.</summary>
+    public float AudioVolume { get; private set; } = 0.8f;
+
+    /// <summary>Evento sparato quando le impostazioni cambiano — SettingsMenu si iscrive.</summary>
+    public static event System.Action OnSettingsChanged;
 
     // ─── Stato ────────────────────────────────────────────────────────────────
     public enum GameState { MainMenu, Playing, Paused, GameOver, Victory }
@@ -75,6 +89,9 @@ public class GameManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
         SceneManager.sceneLoaded += OnSceneLoaded;
+
+        // Carica impostazioni salvate
+        LoadSettings();
     }
 
     void OnDestroy()
@@ -197,6 +214,48 @@ public class GameManager : MonoBehaviour
         _levelStartTime = 0f;
         Player = null;
         PlayerHealth = null;
+    }
+
+    // ─── Impostazioni ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Aggiorna e salva le impostazioni — chiamato da SettingsMenu.
+    /// </summary>
+    public void SaveSettings(float sensitivity, float volume)
+    {
+        MouseSensitivity = Mathf.Clamp01(sensitivity);
+        AudioVolume = Mathf.Clamp01(volume);
+
+        PlayerPrefs.SetFloat(KEY_SENSITIVITY, MouseSensitivity);
+        PlayerPrefs.SetFloat(KEY_VOLUME, AudioVolume);
+        PlayerPrefs.Save();
+
+        ApplySettings();
+        OnSettingsChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Applica le impostazioni correnti ai sistemi attivi nella scena.
+    /// Chiamato ad ogni caricamento scena e quando le impostazioni cambiano.
+    /// </summary>
+    public void ApplySettings()
+    {
+        // Volume audio
+        AudioManager.Instance?.SetVolume(AudioVolume);
+
+        // Sensibilità mouse — cerca il FreeLook nella scena
+        var freeLook = UnityEngine.Object.FindObjectOfType<Cinemachine.CinemachineFreeLook>();
+        if (freeLook != null)
+        {
+            freeLook.m_XAxis.m_MaxSpeed = 300f * MouseSensitivity;
+            freeLook.m_YAxis.m_MaxSpeed = 2f * MouseSensitivity;
+        }
+    }
+
+    private void LoadSettings()
+    {
+        MouseSensitivity = PlayerPrefs.GetFloat(KEY_SENSITIVITY, 0.3f);
+        AudioVolume = PlayerPrefs.GetFloat(KEY_VOLUME, 0.8f);
     }
 
     // ─── Debug ────────────────────────────────────────────────────────────────

@@ -99,27 +99,27 @@ public class LevelManager : MonoBehaviour
     {
         LoadingScreenComplete = false;
 
-        // Schermo parte nero
-        SetFadeAlpha(1f);
+        // Pausa immediata — blocca input e camera
+        GameManager.Instance?.SetPaused(true);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
 
-        // Popola canvas con dati di questa scena
+        // Canvas appare istantaneamente — sfondo nero copre il mondo
         PopulateCanvas();
-
         if (_canvasInstance != null)
         {
             _canvasInstance.SetActive(true);
-            if (_canvasGroup != null) _canvasGroup.alpha = 0f;
+            if (_canvasGroup != null) _canvasGroup.alpha = 1f;
         }
+
+        // FadePanel a 0 — non serve nascondere nulla, il canvas è già opaco
+        SetFadeAlpha(0f);
 
         // Avvia loading music
         if (levelData?.loadingMusic != null)
             AudioManager.Instance?.PlayLooping(levelData.loadingMusic, fadeIn: false);
 
-        // Fade in loading screen (schermo nero → canvas visibile)
-        yield return StartCoroutine(FadeScreen(1f, 0f));
-        yield return StartCoroutine(FadeCanvas(0f, 1f));
-
-        // Nascondi "Premi INVIO"
+        // Nascondi "Premi INVIO" e azzera barra
         if (_premiInvioText != null) _premiInvioText.gameObject.SetActive(false);
         if (_loadingBarFill != null) _loadingBarFill.fillAmount = 0f;
 
@@ -144,20 +144,22 @@ public class LevelManager : MonoBehaviour
         // Stop loading music
         AudioManager.Instance?.Stop(fadeOut: false);
 
-        // Fade out loading screen
-        yield return StartCoroutine(FadeCanvas(1f, 0f));
+        // Canvas scompare istantaneamente
         if (_canvasInstance != null) _canvasInstance.SetActive(false);
-
-        // Fade in scena
-        yield return StartCoroutine(FadeScreen(1f, 0f));
 
         // Avvia gameplay music
         if (levelData?.gameplayMusic != null)
             AudioManager.Instance?.PlayLooping(levelData.gameplayMusic, fadeIn: true);
 
-        // Sblocca input e segna completamento
+        // Sblocca input
         GameManager.Instance?.SetPaused(false);
         LoadingScreenComplete = true;
+
+        // Cursore: libero nel MainMenu (index 0), bloccato nelle scene di gioco
+        bool isMainMenu = UnityEngine.SceneManagement.SceneManager
+                              .GetActiveScene().buildIndex == 0;
+        Cursor.lockState = isMainMenu ? CursorLockMode.None : CursorLockMode.Locked;
+        Cursor.visible = isMainMenu;
     }
 
     // ─── Transizione verso scena successiva ──────────────────────────────────

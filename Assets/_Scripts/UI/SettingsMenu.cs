@@ -49,13 +49,7 @@ public class SettingsMenu : MonoBehaviour
     // ─── Singleton ────────────────────────────────────────────────────────────
     public static SettingsMenu Instance { get; private set; }
 
-    // ─── PlayerPrefs Keys ─────────────────────────────────────────────────────
-    private const string KEY_SENSITIVITY = "MouseSensitivity";
-    private const string KEY_VOLUME = "AudioVolume";
-
-    // ─── Valori default ───────────────────────────────────────────────────────
-    private const float DEFAULT_SENSITIVITY = 0.7f;
-    private const float DEFAULT_VOLUME = 0.8f;
+    // Impostazioni gestite da GameManager — persistono tra le scene
 
     // ─── Inspector ────────────────────────────────────────────────────────────
     [Header("Canvas")]
@@ -76,9 +70,7 @@ public class SettingsMenu : MonoBehaviour
     private CanvasGroup _canvasGroup;
     private Cinemachine.CinemachineFreeLook _freeLook;
 
-    // ─── Proprietà pubblica ───────────────────────────────────────────────────
-    public float MouseSensitivity { get; private set; }
-    public float AudioVolume { get; private set; }
+
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
     void Awake()
@@ -96,8 +88,7 @@ public class SettingsMenu : MonoBehaviour
             settingsCanvas.SetActive(false);
         }
 
-        // Carica impostazioni salvate
-        LoadSettings();
+        // Impostazioni caricate da GameManager
     }
 
     void Start()
@@ -105,27 +96,28 @@ public class SettingsMenu : MonoBehaviour
         // Trova FreeLook nella scena
         _freeLook = FindObjectOfType<Cinemachine.CinemachineFreeLook>();
 
-        // Applica impostazioni caricate
-        ApplySettings();
-
         // Collega slider
         sensitivitySlider?.onValueChanged.AddListener(OnSensitivityChanged);
         volumeSlider?.onValueChanged.AddListener(OnVolumeChanged);
         btnChiudi?.onClick.AddListener(Close);
 
-        // Inizializza valori slider
+        // Inizializza slider con valori da GameManager
+        float sens = GameManager.Instance?.MouseSensitivity ?? 0.3f;
+        float volume = GameManager.Instance?.AudioVolume ?? 0.8f;
+
         if (sensitivitySlider != null)
         {
-            sensitivitySlider.minValue = 0.1f;
-            sensitivitySlider.maxValue = 5f;
-            sensitivitySlider.value = MouseSensitivity;
+            sensitivitySlider.minValue = 0f;
+            sensitivitySlider.maxValue = 10f;   // 10 step discreti
+            sensitivitySlider.wholeNumbers = true;  // scatti interi
+            sensitivitySlider.value = Mathf.RoundToInt(sens * 10f);
         }
 
         if (volumeSlider != null)
         {
             volumeSlider.minValue = 0f;
             volumeSlider.maxValue = 1f;
-            volumeSlider.value = AudioVolume;
+            volumeSlider.value = volume;
         }
 
         UpdateValueTexts();
@@ -159,8 +151,7 @@ public class SettingsMenu : MonoBehaviour
     /// <summary>Chiude il pannello e salva le impostazioni.</summary>
     public void Close()
     {
-        SaveSettings();
-
+        // Salvataggio già avvenuto in tempo reale tramite GameManager.SaveSettings()
         if (settingsCanvas == null) return;
         settingsCanvas.SetActive(false);
 
@@ -175,64 +166,33 @@ public class SettingsMenu : MonoBehaviour
     // ─── Slider callbacks ─────────────────────────────────────────────────────
     private void OnSensitivityChanged(float value)
     {
-        MouseSensitivity = value;
-        ApplySensitivity();
+        float normalised = value / 10f;   // converti 0-10 → 0-1
+        float vol = GameManager.Instance?.AudioVolume ?? volumeSlider?.value ?? 0.8f;
+        GameManager.Instance?.SaveSettings(normalised, vol);
         UpdateValueTexts();
     }
 
     private void OnVolumeChanged(float value)
     {
-        AudioVolume = value;
-        ApplyVolume();
+        float sens = GameManager.Instance?.MouseSensitivity ?? sensitivitySlider?.value ?? 0.7f;
+        GameManager.Instance?.SaveSettings(sens, value);
         UpdateValueTexts();
     }
 
-    // ─── Applica impostazioni ─────────────────────────────────────────────────
-    private void ApplySettings()
-    {
-        ApplySensitivity();
-        ApplyVolume();
-    }
-
-    private void ApplySensitivity()
-    {
-        if (_freeLook == null)
-            _freeLook = FindObjectOfType<Cinemachine.CinemachineFreeLook>();
-
-        if (_freeLook != null)
-        {
-            // Scala la velocità degli assi X e Y per la sensibilità
-            _freeLook.m_XAxis.m_MaxSpeed = 300f * MouseSensitivity;
-            _freeLook.m_YAxis.m_MaxSpeed = 2f * MouseSensitivity;
-        }
-    }
-
-    private void ApplyVolume()
-    {
-        AudioManager.Instance?.SetVolume(AudioVolume);
-    }
+    // Applica impostazioni delegate a GameManager
 
     // ─── Testo valori ─────────────────────────────────────────────────────────
     private void UpdateValueTexts()
     {
+        float sens = GameManager.Instance?.MouseSensitivity ?? sensitivitySlider?.value ?? 0.7f;
+        float vol = GameManager.Instance?.AudioVolume ?? volumeSlider?.value ?? 0.8f;
+
         if (sensitivityValueText != null)
-            sensitivityValueText.text = MouseSensitivity.ToString("F1");
+            sensitivityValueText.text = sens.ToString("F1");   // mostra 0.0-1.0
 
         if (volumeValueText != null)
-            volumeValueText.text = Mathf.RoundToInt(AudioVolume * 100f) + "%";
+            volumeValueText.text = Mathf.RoundToInt(vol * 100f) + "%";
     }
 
-    // ─── PlayerPrefs ──────────────────────────────────────────────────────────
-    private void LoadSettings()
-    {
-        MouseSensitivity = PlayerPrefs.GetFloat(KEY_SENSITIVITY, DEFAULT_SENSITIVITY);
-        AudioVolume = PlayerPrefs.GetFloat(KEY_VOLUME, DEFAULT_VOLUME);
-    }
-
-    private void SaveSettings()
-    {
-        PlayerPrefs.SetFloat(KEY_SENSITIVITY, MouseSensitivity);
-        PlayerPrefs.SetFloat(KEY_VOLUME, AudioVolume);
-        PlayerPrefs.Save();
-    }
+    // PlayerPrefs e salvataggio gestiti da GameManager.SaveSettings()
 }

@@ -1,6 +1,6 @@
+using System;
 using UnityEngine;
 using UnityEngine.Events;
-using System;
 
 /// <summary>
 /// DANTE: DIVINE'S FALL — Health.cs
@@ -22,8 +22,6 @@ using System;
 /// </summary>
 public class Health : MonoBehaviour
 {
-    public static event Action<float> OnHealthChangedStatic;
-
     [Header("Config")]
     public float maxHealth = 100f;
     public bool destroyOnDeath = false;
@@ -31,6 +29,9 @@ public class Health : MonoBehaviour
     [Header("Events")]
     public UnityEvent<float> OnHealthChanged;   // passa currentHP
     public UnityEvent OnDeath;
+
+    /// <summary>Evento statico — HUDController si iscrive senza riferimento diretto.</summary>
+    public static event Action<float, float> OnHealthChangedStatic;  // (current, max)
 
     private float _current;
 
@@ -56,6 +57,7 @@ public class Health : MonoBehaviour
         _current = Mathf.Max(0f, _current - amount);
         Debug.Log($"[Health] {gameObject.name} HP: {_current}/{maxHealth} (-{amount})");
         OnHealthChanged?.Invoke(_current);
+        OnHealthChangedStatic?.Invoke(_current, maxHealth);
 
         if (_current <= 0f) Die();
     }
@@ -65,6 +67,7 @@ public class Health : MonoBehaviour
         if (_current <= 0f) return;
         _current = Mathf.Min(maxHealth, _current + amount);
         OnHealthChanged?.Invoke(_current);
+        OnHealthChangedStatic?.Invoke(_current, maxHealth);
     }
 
     private void Die()

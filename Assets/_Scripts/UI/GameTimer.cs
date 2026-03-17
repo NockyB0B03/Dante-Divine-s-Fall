@@ -4,33 +4,33 @@ using UnityEngine;
 /// <summary>
 /// DANTE: DIVINE'S FALL — GameTimer.cs
 /// ─────────────────────────────────────────────────────────────────────────────
-/// Conto alla rovescia configurabile da Inspector.
-/// Comunica con HUDController tramite evento statico — nessuna dipendenza diretta.
+/// Conto alla rovescia da totalTime secondi.
+/// Alla scadenza chiama DeathManager.OnHealthDeath() — stessa sequenza
+/// di morte che si vede quando Dante perde tutti gli HP.
 ///
-/// EVENTI STATICI:
-///   OnTimerChanged(float remaining)  → HUDController aggiorna il testo MM:SS
-///   OnTimerExpired()                 → GameManager gestisce il game over
+/// Si pausa automaticamente quando GameManager è in stato Paused.
 ///
 /// INSPECTOR:
-///   totalTime  → secondi totali (default 300 = 5 minuti)
+///   totalTime → secondi totali (default 300 = 5:00)
+///
+/// EVENTI STATICI:
+///   OnTimerChanged(float remaining) → HUDController aggiorna il testo MM:SS
+///   OnTimerExpired()                → HUDController può colorare il testo di rosso
 /// </summary>
 public class GameTimer : MonoBehaviour
 {
     // ─── Eventi statici ───────────────────────────────────────────────────────
-    /// <summary>Sparato ogni frame con i secondi rimanenti.</summary>
     public static event Action<float> OnTimerChanged;
-
-    /// <summary>Sparato una sola volta quando il timer raggiunge 0.</summary>
     public static event Action OnTimerExpired;
 
     // ─── Inspector ────────────────────────────────────────────────────────────
     [Header("Config")]
-    [Tooltip("Tempo totale in secondi (es. 300 = 5:00).")]
+    [Tooltip("Tempo totale in secondi (default 300 = 5:00).")]
     public float totalTime = 300f;
 
     // ─── Privati ──────────────────────────────────────────────────────────────
     private float _remaining;
-    private bool _running = true;
+    private bool _expired = false;
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
     void Awake()
@@ -38,29 +38,42 @@ public class GameTimer : MonoBehaviour
         _remaining = totalTime;
     }
 
+    void Start()
+    {
+        // Invia subito il valore iniziale all'HUD
+        OnTimerChanged?.Invoke(_remaining);
+    }
+
     void Update()
     {
-        if (!_running) return;
+        if (_expired) return;
+
+        // Non scorrere durante la pausa
+        if (GameManager.Instance?.CurrentState == GameManager.GameState.Paused) return;
 
         _remaining -= Time.deltaTime;
 
         if (_remaining <= 0f)
         {
             _remaining = 0f;
-            _running = false;
-
+            _expired = true;
             OnTimerChanged?.Invoke(0f);
             OnTimerExpired?.Invoke();
+
+            // Attiva la sequenza di morte normale
+            DeathManager dm = FindObjectOfType<DeathManager>();
+            if (dm != null)
+                dm.OnHealthDeath();
+            else
+                Debug.LogError("[GameTimer] DeathManager non trovato — impossibile triggerare la morte.");
+
             return;
         }
 
         OnTimerChanged?.Invoke(_remaining);
     }
 
-    // ─── Utility pubblica ─────────────────────────────────────────────────────
-    /// <summary>Usato da HUDController per inizializzare il testo al caricamento.</summary>
+    // ─── Utility ─────────────────────────────────────────────────────────────
     public float GetRemaining() => _remaining;
-
-    /// <summary>Pausa/riprende il timer — chiamalo da PauseMenu.</summary>
-    public void SetPaused(bool paused) => _running = !paused;
+    public float GetNormalised() => _remaining / totalTime;
 }

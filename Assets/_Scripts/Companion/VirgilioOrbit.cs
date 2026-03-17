@@ -5,7 +5,8 @@ using UnityEngine;
 /// DANTE: DIVINE'S FALL — VirgilioOrbit.cs
 /// ─────────────────────────────────────────────────────────────────────────────
 /// Virgilio è uno spiritello fluttuante che orbita le spalle di Dante.
-/// NON è figlio di Dante in gerarchia — legge danteTransform ogni frame.
+/// Può essere figlio di Dante — in quel caso danteTransform viene trovato automaticamente.
+/// In alternativa assegna danteTransform manualmente in Inspector.
 ///
 /// MOVIMENTO BASE:
 ///   Orbita semicircolare alle spalle di Dante su piano XZ, con bob sinusoidale
@@ -17,7 +18,7 @@ using UnityEngine;
 ///   I due script non si referenziano mai direttamente.
 ///
 /// INSPECTOR SETUP:
-///   danteTransform   → trascina il GameObject di Dante
+///   danteTransform   → trascina il GameObject di Dante (auto-trovato se Virgilio è figlio di Dante)
 ///   orbitRadius      → raggio dell'orbita (default 1.2)
 ///   orbitSpeed       → velocità angolare rad/s (default 1.8)
 ///   heightOffset     → altezza sopra l'origine di Dante (default 1.5)
@@ -73,18 +74,34 @@ public class VirgilioOrbit : MonoBehaviour
 
     // Offset Y aggiunto al di sopra del calcolo orbit — gestito dal bounce
     private float _bounceOffsetY = 0f;
+    private bool _isHealReady = true;   // true all'inizio — heal disponibile
+    private float _bounceTimer = 0f;
+
+    [Tooltip("Intervallo in secondi tra un saltino e l'altro quando heal è disponibile.")]
+    public float bounceInterval = 1f;
 
     private MaterialPropertyBlock _propBlock;
     private static readonly int _colorID = Shader.PropertyToID("_Color");
 
-    private bool _isReady = false;
     private Coroutine _bounceRoutine;
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
     void Awake()
     {
         _propBlock = new MaterialPropertyBlock();
-        ApplyColor(normalColor);
+        // Parte con readyColor e saltini attivi — heal disponibile all'inizio
+        _isHealReady = true;
+        _bounceTimer = bounceInterval;   // primo saltino subito
+        ApplyColor(readyColor);
+
+        // Se danteTransform non è assegnato in Inspector,
+        // cerca automaticamente il root Dante nel parent
+        if (danteTransform == null)
+            danteTransform = transform.parent;
+
+        if (danteTransform == null)
+            Debug.LogError("[VirgilioOrbit] danteTransform non trovato! " +
+                           "Assegna Dante in Inspector o metti Virgilio come figlio di Dante.");
     }
 
     void OnEnable()
@@ -102,6 +119,17 @@ public class VirgilioOrbit : MonoBehaviour
     void Update()
     {
         if (danteTransform == null) return;
+
+        // ── Auto-bounce quando heal è ready ───────────────────────────────
+        if (_isHealReady && _bounceRoutine == null)
+        {
+            _bounceTimer += Time.deltaTime;
+            if (_bounceTimer >= bounceInterval)
+            {
+                _bounceTimer = 0f;
+                _bounceRoutine = StartCoroutine(BounceRoutine());
+            }
+        }
 
         // ── Aggiorna angolo e bob ─────────────────────────────────────────
         _angle += orbitSpeed * Time.deltaTime;
@@ -135,25 +163,32 @@ public class VirgilioOrbit : MonoBehaviour
     /// Chiamato da HealAbility quando il cooldown è terminato.
     /// Cambia colore e fa il saltino.
     /// </summary>
+    /// <summary>
+    /// Heal disponibile — torna al readyColor con saltino.
+    /// </summary>
     private void HandleHealReady()
     {
-        _isReady = true;
+        _isHealReady = true;
+        _bounceTimer = bounceInterval;   // salta subito al primo bounce
         ApplyColor(readyColor);
-
-        // Interrompe un eventuale bounce precedente ancora in corso
-        if (_bounceRoutine != null)
-            StopCoroutine(_bounceRoutine);
-
-        _bounceRoutine = StartCoroutine(BounceRoutine());
     }
 
     /// <summary>
-    /// Chiamato da HealAbility quando il player usa la cura.
-    /// Torna al colore normale.
+    /// Heal usata — passa a normalColor, ferma i saltini.
     /// </summary>
     private void HandleHealUsed()
     {
-        _isReady = false;
+        _isHealReady = false;
+        _bounceTimer = 0f;
+
+        // Ferma eventuale bounce in corso
+        if (_bounceRoutine != null)
+        {
+            StopCoroutine(_bounceRoutine);
+            _bounceRoutine = null;
+            _bounceOffsetY = 0f;
+        }
+
         ApplyColor(normalColor);
     }
 
