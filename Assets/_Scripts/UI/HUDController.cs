@@ -88,8 +88,23 @@ public class HUDController : MonoBehaviour
         GameManager.OnUltimateUsesChanged -= UpdateUltimate;
     }
 
+    [Header("HUD Root")]
+    [Tooltip("GameObject root dell'HUD — disabilitato se showHUD = false nel LevelData.")]
+    public GameObject hudRoot;
+
+    [Tooltip("GameObject dell'icona Ultimate — disabilitato se showUltimateIcon = false.")]
+    public GameObject ultimateIconRoot;
+
     void Start()
     {
+        // Legge le impostazioni dal LevelData corrente
+        LevelData data = LevelManager.Instance?.levelData;
+        if (data != null)
+        {
+            if (hudRoot != null) hudRoot.SetActive(data.showHUD);
+            if (ultimateIconRoot != null) ultimateIconRoot.SetActive(data.showUltimateIcon);
+        }
+
         // Inizializza valori di default
         if (hpFill != null) hpFill.fillAmount = 1f;
         if (healCooldownFill != null) healCooldownFill.fillAmount = 0f;
@@ -97,7 +112,7 @@ public class HUDController : MonoBehaviour
         if (ultimateText != null) ultimateText.text = "x0";
         if (timerText != null) timerText.color = timerNormalColor;
 
-        // Inizializza timer dal GameTimer se già presente in scena
+        // Inizializza timer
         GameTimer gt = FindObjectOfType<GameTimer>();
         if (gt != null) UpdateTimer(gt.GetRemaining());
 

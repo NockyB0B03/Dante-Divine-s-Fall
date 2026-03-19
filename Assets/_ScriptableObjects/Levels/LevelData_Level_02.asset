@@ -16,3 +16,5 @@ MonoBehaviour:
   loadingMusic: {fileID: 8300000, guid: e675642de4931234c896a0195d9fde4f, type: 3}
   gameplayMusic: {fileID: 8300000, guid: 3c8fe7c69e0853d43983346dcb1da192, type: 3}
   deathMusic: {fileID: 0}
+  showHUD: 1
+  showUltimateIcon: 0

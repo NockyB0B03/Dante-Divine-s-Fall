@@ -4,85 +4,69 @@ using UnityEngine;
 /// <summary>
 /// DANTE: DIVINE'S FALL — LuciferBoss.cs
 /// ─────────────────────────────────────────────────────────────────────────────
-/// Boss finale stazionario con 2 fasi di vita.
+/// Boss finale con FSM a 6 stati.
 ///
-/// FASE 1 (HP > 50%):
-///   - Fireball: lancia sfere di fuoco verso l'ultima posizione nota del player.
-///   - Spin: se il player è nel raggio di rotazione, applica danno.
+/// STATI:
+///   Idle            → aspetta il cooldown del prossimo attacco disponibile
+///   Fireball        → lancia sfere di fuoco verso il player
+///   TailAttack      → colpo di coda (carica + sweep 360°)
+///   SpikeAttack     → spawna spuntoni (solo Fase 2)
+///   PhaseTransition → ruggito + potenziamento (HP ≤ 50%)
+///   Death           → morte
 ///
-/// FASE 2 (HP ≤ 50%):
-///   - Stessi attacchi con intervalli ridotti.
-///   - Ground Spikes: fa crescere spuntoni in linea retta davanti a sé.
+/// TRANSIZIONI:
+///   Idle → Fireball    : cooldown fireball scaduto
+///   Idle → TailAttack  : cooldown tail scaduto
+///   Idle → SpikeAttack : cooldown spike scaduto (solo Fase 2)
+///   Idle → PhaseTransition : HP ≤ 50% e fase == One
+///   Qualsiasi → Death  : HP == 0
+///   Qualsiasi → Idle   : attacco completato
 ///
-/// DIPENDENZE:
-///   - Health.cs sulla stessa GameObject
-///   - LuciferFireballPool nella scena (singleton)
-///   - GroundSpike prefab assegnato in Inspector
-///   - GameManager.Instance per ResetUltimateUses() alla transizione di fase
-///
-/// INSPECTOR:
-///   phase2Threshold       → 0.5 (50% HP)
-///   fireballCooldown      → 3 secondi (Fase 1)
-///   spinCooldown          → 5 secondi
-///   spinRadius            → 4 unità
-///   spinDamage            → 20
-///   spikeCooldown         → 6 secondi (Fase 1)
-///   spikeCount            → numero di spuntoni per lancio
-///   spikeSpacing          → distanza tra uno spuntone e l'altro
-///   groundSpikePrefab     → prefab dello spuntone
-///   fireballSpawnPoints   → Transform[] — punti di spawn dei fireball (bocca)
-///   playerTransform       → assegnato automaticamente via GameManager in Awake
-///
-/// GERARCHIA CONSIGLIATA:
-///   Lucifer (LuciferBoss, Health, Animator)
-///   └── FireballSpawnPoint  ← Transform bocca
-///   └── BossPortal.prefab   ← disabilitato, abilitato da OnDeath UnityEvent
+/// REGOLA FONDAMENTALE:
+///   Un solo attacco alla volta — lo stato cambia solo quando l'attacco corrente
+///   è completato. I cooldown scorrono sempre, anche durante un attacco.
 /// </summary>
-
 public class LuciferBoss : EnemyBase
 {
+    // ─── FSM ──────────────────────────────────────────────────────────────────
+    public enum BossState { Idle, Fireball, TailAttack, SpikeAttack, PhaseTransition, Death }
+
+    [Header("Stato (read-only)")]
+    [SerializeField] private BossState _currentState = BossState.Idle;
+
     public enum Phase { One, Two }
+    private Phase _currentPhase = Phase.One;
 
     // ─── Inspector ────────────────────────────────────────────────────────────
     [Header("Fasi")]
     [Range(0f, 1f)]
-    [Tooltip("Percentuale HP sotto la quale scatta la Fase 2.")]
     public float phase2Threshold = 0.5f;
+    public float phase2SpeedMultiplier = 1.6f;
 
     [Header("Fireball")]
     public Transform[] fireballSpawnPoints;
-    [Tooltip("Secondi tra un lancio e l'altro in Fase 1.")]
     public float fireballCooldown = 3f;
 
-    [Header("Spin Attack")]
-    [Tooltip("Secondi tra uno spin e l'altro.")]
-    public float spinCooldown = 5f;
-    [Tooltip("Raggio entro cui il player viene colpito dallo spin.")]
-    public float spinRadius = 4f;
-    [Tooltip("Danno inflitto dallo spin.")]
-    public float spinDamage = 20f;
+    [Header("Tail Attack")]
+    public float tailCooldown = 5f;
+    public TailAttack tailAttack;
 
     [Header("Ground Spikes (Fase 2)")]
     public GameObject groundSpikePrefab;
-    [Tooltip("Secondi tra un attacco spikes e l'altro in Fase 1 (ridotto in Fase 2).")]
     public float spikeCooldown = 6f;
-    [Tooltip("Numero di spuntoni per lancio.")]
     public int spikeCount = 6;
-    [Tooltip("Distanza tra uno spuntone e l'altro lungo la linea.")]
     public float spikeSpacing = 1.5f;
 
-    [Header("Fase 2 — Moltiplicatore velocità attacchi")]
-    public float phase2SpeedMultiplier = 1.6f;
-
-    [Header("Rotazione")]
-    [Tooltip("Velocità di rotazione verso il player in gradi/secondo.")]
+    [Header("Rotazione verso player")]
     public float rotationSpeed = 90f;
 
     // ─── Privati ──────────────────────────────────────────────────────────────
-    private Phase _currentPhase = Phase.One;
-    private bool _phaseTransitioning = false;
+    private float _fireballTimer = 0f;
+    private float _tailTimer = 0f;
+    private float _spikeTimer = 0f;
 
-    private static readonly int _animSpin = Animator.StringToHash("Spin");
+    private bool _phaseTransitionDone = false;
+
     private static readonly int _animRoar = Animator.StringToHash("Roar");
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
@@ -91,206 +75,227 @@ public class LuciferBoss : EnemyBase
         base.Awake();
     }
 
-    void Update()
-    {
-        if (IsDead || PlayerTransform == null) return;
-        RotateTowardPlayer();
-    }
-
-    /// <summary>
-    /// Ruota Lucifero su se stesso in modo che il forward punti sempre verso Dante.
-    /// Solo sull'asse Y — Lucifero non si inclina mai.
-    /// </summary>
-    private void RotateTowardPlayer()
-    {
-        Vector3 direction = PlayerTransform.position - transform.position;
-        direction.y = 0f;   // solo rotazione orizzontale
-
-        if (direction == Vector3.zero) return;
-
-        Quaternion targetRotation = Quaternion.LookRotation(direction);
-        transform.rotation = Quaternion.RotateTowards(
-            transform.rotation,
-            targetRotation,
-            rotationSpeed * Time.deltaTime);
-    }
-
     protected override void Start()
     {
-        // base.Start() iscrive EnemyBase a GameManager.OnPlayerRegistered
-        // PlayerTransform verrà assegnato quando il player si registra
-        // FireballLoop e SpinLoop aspettano internamente che PlayerTransform sia disponibile
         base.Start();
 
-        EnemyHealth.OnHealthChanged.AddListener(CheckPhaseTransition);
-        StartCoroutine(FireballLoop());
-        StartCoroutine(SpinLoop());
-        // Gli spikes partono solo in Fase 2 — avviati in EnterPhaseTwo()
+        if (tailAttack == null)
+            tailAttack = GetComponentInChildren<TailAttack>();
+
+        EnemyHealth.OnHealthChanged.AddListener(OnHealthChanged);
     }
 
     void OnDisable()
     {
-        EnemyHealth.OnHealthChanged.RemoveListener(CheckPhaseTransition);
+        EnemyHealth.OnHealthChanged.RemoveListener(OnHealthChanged);
     }
 
-    // ─── Override morte ──────────────────────────────────────────────────────
-    protected override void OnDeath()
+    void Update()
     {
-        // Il portale verso Level 6 viene spawnato dalla UnityEvent OnDeath
-        // di Health.cs — configurata in Inspector su Lucifero.
-        // Qui fermiamo le coroutine degli attacchi.
-        StopAllCoroutines();
+        if (IsDead || PlayerTransform == null) return;
+
+        // Cooldown sempre attivi — anche durante un attacco
+        _fireballTimer += Time.deltaTime;
+        _tailTimer += Time.deltaTime;
+        _spikeTimer += Time.deltaTime;
+
+        // Rotazione verso il player solo in Idle
+        if (_currentState == BossState.Idle)
+            RotateTowardPlayer();
+
+        // Transizioni dalla FSM
+        UpdateFSM();
     }
 
-    // ─── Transizione di Fase ──────────────────────────────────────────────────
-    private void CheckPhaseTransition(float currentHP)
+    // ─── FSM ──────────────────────────────────────────────────────────────────
+    private void UpdateFSM()
     {
-        if (_currentPhase == Phase.One
-            && EnemyHealth.Percent <= phase2Threshold
-            && !_phaseTransitioning)
+        // Solo da Idle si può entrare in un nuovo stato
+        if (_currentState != BossState.Idle) return;
+
+        // Controlla phase transition
+        if (!_phaseTransitionDone &&
+            EnemyHealth.Percent <= phase2Threshold &&
+            _currentPhase == Phase.One)
         {
-            StartCoroutine(EnterPhaseTwo());
+            EnterState(BossState.PhaseTransition);
+            return;
+        }
+
+        // Priorità attacchi:
+        // FASE 1: Tail → Fireball
+        // FASE 2: Spike → Fireball → Tail
+        // Le spike hanno priorità massima in Fase 2 perché hanno cooldown maggiore
+        if (_currentPhase == Phase.Two && _spikeTimer >= spikeCooldown)
+        {
+            EnterState(BossState.SpikeAttack);
+            return;
+        }
+
+        if (_fireballTimer >= fireballCooldown)
+        {
+            EnterState(BossState.Fireball);
+            return;
+        }
+
+        if (_tailTimer >= tailCooldown)
+        {
+            EnterState(BossState.TailAttack);
+            return;
         }
     }
 
-    private IEnumerator EnterPhaseTwo()
+    private void EnterState(BossState newState)
     {
-        _phaseTransitioning = true;
+        _currentState = newState;
+
+        switch (newState)
+        {
+            case BossState.Fireball:
+                _fireballTimer = 0f;
+                StartCoroutine(FireballRoutine());
+                break;
+
+            case BossState.TailAttack:
+                _tailTimer = 0f;
+                StartCoroutine(TailRoutine());
+                break;
+
+            case BossState.SpikeAttack:
+                _spikeTimer = 0f;
+                StartCoroutine(SpikeRoutine());
+                break;
+
+            case BossState.PhaseTransition:
+                StartCoroutine(PhaseTransitionRoutine());
+                break;
+
+            case BossState.Death:
+                OnDeath();
+                break;
+        }
+    }
+
+    private void ExitToIdle()
+    {
+        _currentState = BossState.Idle;
+    }
+
+    // ─── Routines ─────────────────────────────────────────────────────────────
+    private IEnumerator FireballRoutine()
+    {
+        if (PlayerTransform == null) { ExitToIdle(); yield break; }
+        if (LuciferFireballPool.Instance == null)
+        {
+            Debug.LogError("[LuciferBoss] LuciferFireballPool non trovato!");
+            ExitToIdle();
+            yield break;
+        }
+
+        Vector3 lastKnownPos = PlayerTransform.position;
+
+        foreach (var spawnPt in fireballSpawnPoints)
+        {
+            if (spawnPt == null) continue;
+            GameObject fb = LuciferFireballPool.Instance.Get(spawnPt.position, spawnPt.rotation);
+            LuciferFireball fireball = fb.GetComponent<LuciferFireball>();
+            fireball?.LaunchToward(lastKnownPos);
+        }
+
+        // Piccola pausa dopo il lancio prima di tornare Idle
+        yield return new WaitForSeconds(0.5f);
+        ExitToIdle();
+    }
+
+    private IEnumerator TailRoutine()
+    {
+        if (tailAttack == null) { ExitToIdle(); yield break; }
+
+        yield return StartCoroutine(tailAttack.PerformAttack(PlayerTransform));
+
+        // Ritorno graduale verso il player dopo il colpo
+        float returnDuration = 1f;
+        float elapsed = 0f;
+        while (elapsed < returnDuration && PlayerTransform != null)
+        {
+            elapsed += Time.deltaTime;
+            RotateTowardPlayer();
+            yield return null;
+        }
+
+        ExitToIdle();
+    }
+
+    private IEnumerator SpikeRoutine()
+    {
+        SpawnGroundSpikes();
+        yield return new WaitForSeconds(0.5f);
+        ExitToIdle();
+    }
+
+    private IEnumerator PhaseTransitionRoutine()
+    {
+        _phaseTransitionDone = true;
         _currentPhase = Phase.Two;
 
-        // Notifica GameManager → resetta i 2 usi dell'Ultimate
         GameManager.Instance?.ResetUltimateUses();
-
-        // Animazione ruggito — pausa attacchi durante la transizione
         EnemyAnimator?.SetTrigger(_animRoar);
         yield return new WaitForSeconds(2f);
 
         // Aumenta frequenza attacchi
         fireballCooldown /= phase2SpeedMultiplier;
-        spinCooldown /= phase2SpeedMultiplier;
+        tailCooldown /= phase2SpeedMultiplier;
         spikeCooldown /= phase2SpeedMultiplier;
 
-        // Avvia attacco spikes esclusivo della Fase 2
-        StartCoroutine(SpikeLoop());
-
-        _phaseTransitioning = false;
+        ExitToIdle();
     }
 
-    // ─── Fireball Loop ────────────────────────────────────────────────────────
-    private IEnumerator FireballLoop()
+    // ─── Health Changed ───────────────────────────────────────────────────────
+    private void OnHealthChanged(float currentHP)
     {
-        // Aspetta che PlayerTransform sia disponibile
-        float waitTimer = 0f;
-        while (PlayerTransform == null)
-        {
-            waitTimer += Time.deltaTime;
-            if (waitTimer > 5f)
-            {
-                Debug.LogError("[LuciferBoss] FireballLoop: PlayerTransform ancora null dopo 5s — loop interrotto.");
-                yield break;
-            }
-            yield return null;
-        }
-
-        Debug.Log($"[LuciferBoss] FireballLoop avviato. PlayerTransform={PlayerTransform.name} cooldown={fireballCooldown}s spawnPoints={fireballSpawnPoints?.Length ?? 0}");
-
-        while (true)
-        {
-            yield return new WaitForSeconds(fireballCooldown);
-
-            if (_phaseTransitioning) { Debug.Log("[LuciferBoss] FireballLoop: skip — phase transitioning"); continue; }
-            if (PlayerTransform == null) { Debug.LogWarning("[LuciferBoss] FireballLoop: skip — PlayerTransform null"); continue; }
-
-            if (LuciferFireballPool.Instance == null)
-            {
-                Debug.LogError("[LuciferBoss] FireballLoop: LuciferFireballPool.Instance è NULL! Aggiungi Pool_LuciferFireballs nella scena.");
-                continue;
-            }
-
-            if (fireballSpawnPoints == null || fireballSpawnPoints.Length == 0)
-            {
-                Debug.LogError("[LuciferBoss] FireballLoop: fireballSpawnPoints è vuoto! Assegna almeno un punto di spawn in Inspector.");
-                continue;
-            }
-
-            Vector3 lastKnownPlayerPos = PlayerTransform.position;
-            Debug.Log($"[LuciferBoss] FireballLoop: sparo verso {lastKnownPlayerPos} da {fireballSpawnPoints.Length} spawn point/s");
-
-            foreach (var spawnPt in fireballSpawnPoints)
-            {
-                if (spawnPt == null) { Debug.LogWarning("[LuciferBoss] FireballLoop: uno spawn point è null — skip"); continue; }
-
-                GameObject fb = LuciferFireballPool.Instance.Get(spawnPt.position, spawnPt.rotation);
-
-                if (fb == null) { Debug.LogError("[LuciferBoss] FireballLoop: pool ha restituito null — prefab LuciferFireball non assegnato?"); continue; }
-
-                LuciferFireball fireball = fb.GetComponent<LuciferFireball>();
-                if (fireball == null)
-                {
-                    Debug.LogError($"[LuciferBoss] FireballLoop: {fb.name} non ha LuciferFireball.cs!");
-                    continue;
-                }
-
-                fireball.LaunchToward(lastKnownPlayerPos);
-                Debug.Log($"[LuciferBoss] FireballLoop: fireball lanciato da {spawnPt.name} verso {lastKnownPlayerPos}");
-            }
-        }
+        // La phase transition è gestita dalla FSM in UpdateFSM
+        // Questo listener non fa nulla — teniamo per compatibilità
     }
 
-    // ─── Spin Loop ────────────────────────────────────────────────────────────
-    private IEnumerator SpinLoop()
+    // ─── Override morte ───────────────────────────────────────────────────────
+    protected override void OnDeath()
     {
-        while (PlayerTransform == null) yield return null;
-
-        while (true)
-        {
-            yield return new WaitForSeconds(spinCooldown);
-            if (_phaseTransitioning || PlayerTransform == null) continue;
-
-            EnemyAnimator?.SetTrigger(_animSpin);
-
-            // Controlla se il player è nel raggio
-            float dist = Vector3.Distance(transform.position, PlayerTransform.position);
-            if (dist <= spinRadius)
-            {
-                Health playerHealth = PlayerTransform?.GetComponent<Health>();
-                playerHealth?.TakeDamage(spinDamage);
-            }
-        }
+        _currentState = BossState.Death;
+        StopAllCoroutines();
     }
 
-    // ─── Spike Loop (solo Fase 2) ─────────────────────────────────────────────
-    private IEnumerator SpikeLoop()
+    // ─── Rotazione ────────────────────────────────────────────────────────────
+    private void RotateTowardPlayer()
     {
-        while (_currentPhase == Phase.Two)
-        {
-            yield return new WaitForSeconds(spikeCooldown);
-            if (_phaseTransitioning) continue;
+        if (PlayerTransform == null) return;
 
-            SpawnGroundSpikes();
-        }
+        Vector3 dir = PlayerTransform.position - transform.position;
+        dir.y = 0f;
+        if (dir == Vector3.zero) return;
+
+        Quaternion target = Quaternion.LookRotation(dir);
+        transform.rotation = Quaternion.RotateTowards(
+            transform.rotation, target, rotationSpeed * Time.deltaTime);
     }
 
+    // ─── Ground Spikes ────────────────────────────────────────────────────────
     private void SpawnGroundSpikes()
     {
         if (groundSpikePrefab == null) return;
 
-        // Direzione casuale nell'arco frontale di Lucifero (180°)
         float randomAngle = Random.Range(-90f, 90f);
         Vector3 spikeDir = Quaternion.Euler(0f, randomAngle, 0f) * transform.forward;
         spikeDir.y = 0f;
         spikeDir.Normalize();
 
-        // Spawna gli spuntoni in linea retta partendo da Lucifero verso l'esterno
         for (int i = 0; i < spikeCount; i++)
         {
             Vector3 candidatePos = transform.position + spikeDir * (spikeSpacing * (i + 1));
 
-            // Raycast verso il basso per trovare la Y reale del terreno
             RaycastHit hit;
             Vector3 spawnPos;
             if (Physics.Raycast(candidatePos + Vector3.up * 10f, Vector3.down, out hit, 20f))
-                spawnPos = hit.point;   // esattamente sulla superficie del terreno
+                spawnPos = hit.point;
             else
                 spawnPos = new Vector3(candidatePos.x, transform.position.y, candidatePos.z);
 
@@ -303,19 +308,18 @@ public class LuciferBoss : EnemyBase
     [ContextMenu("DEBUG — Forza Fase 2")]
     private void Debug_ForcePhase2()
     {
-        if (!Application.isPlaying)
-        {
-            Debug.LogWarning("[LuciferBoss] Funziona solo in Play Mode.");
-            return;
-        }
+        if (!Application.isPlaying) return;
         EnemyHealth.TakeDamage(EnemyHealth.Current * 0.6f);
     }
 
     void OnDrawGizmosSelected()
     {
-        // Spin radius
         UnityEditor.Handles.color = new Color(1f, 0.5f, 0f, 0.2f);
-        UnityEditor.Handles.DrawWireDisc(transform.position, Vector3.up, spinRadius);
+        UnityEditor.Handles.DrawWireDisc(transform.position, Vector3.up, 4f);
+
+        UnityEditor.Handles.Label(
+            transform.position + Vector3.up * 2.5f,
+            $"State: {_currentState} | Phase: {_currentPhase}");
     }
 #endif
 }

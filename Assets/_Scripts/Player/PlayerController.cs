@@ -136,6 +136,10 @@ public class PlayerController : MonoBehaviour
     // Stato animazione caduta
     private bool _isFalling;
 
+    // Knockback
+    private Vector3 _knockbackVelocity = Vector3.zero;
+    private float _knockbackTimer = 0f;
+
     // ID parametri Animator (cache per evitare string lookup ogni frame)
     private static readonly int _animSpeed = Animator.StringToHash("Speed");
     private static readonly int _animIsGrounded = Animator.StringToHash("IsGrounded");
@@ -205,6 +209,7 @@ public class PlayerController : MonoBehaviour
 
         UpdateGroundedState();
         HandleGravity();
+        HandleKnockback();
         HandleMovement();
         HandleRotation();
         UpdateAnimator();
@@ -412,6 +417,32 @@ public class PlayerController : MonoBehaviour
         _animator.SetFloat(_animSpeed, NormalisedSpeed);
         _animator.SetBool(_animIsGrounded, _cc.isGrounded);
         _animator.SetBool(_animIsSprint, _isSprinting && _moveInput.sqrMagnitude > 0.01f);
+    }
+
+    // ─── Knockback ────────────────────────────────────────────────────────────
+    /// <summary>
+    /// Applica un impulso di knockback a Dante.
+    /// Chiamato da TailAttack dopo il colpo di coda.
+    /// </summary>
+    public void ApplyKnockback(Vector3 velocity, float duration)
+    {
+        _knockbackVelocity = velocity;
+        _knockbackTimer = duration;
+        IsAbilityCasting = true;   // blocca input durante il knockback
+    }
+
+    private void HandleKnockback()
+    {
+        if (_knockbackTimer <= 0f) return;
+
+        _knockbackTimer -= Time.deltaTime;
+        _cc.Move(_knockbackVelocity * Time.deltaTime);
+
+        if (_knockbackTimer <= 0f)
+        {
+            _knockbackVelocity = Vector3.zero;
+            IsAbilityCasting = false;   // riabilita input
+        }
     }
 
     // ─── Debug ────────────────────────────────────────────────────────────────

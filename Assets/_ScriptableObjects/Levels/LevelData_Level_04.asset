@@ -16,3 +16,5 @@ MonoBehaviour:
   loadingMusic: {fileID: 0}
   gameplayMusic: {fileID: 0}
   deathMusic: {fileID: 0}
+  showHUD: 1
+  showUltimateIcon: 0

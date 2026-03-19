@@ -29,4 +29,11 @@ public class LevelData : ScriptableObject
 
     [Tooltip("Clip in loop durante la schermata di morte.")]
     public AudioClip deathMusic;
+
+    [Header("HUD")]
+    [Tooltip("Se false, l'HUD è nascosto in questo livello (es. cutscene finale).")]
+    public bool showHUD = true;
+
+    [Tooltip("Se false, l'icona Ultimate è nascosta (es. livelli senza combattimento).")]
+    public bool showUltimateIcon = true;
 }

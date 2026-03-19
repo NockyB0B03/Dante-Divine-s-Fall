@@ -571,7 +571,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 7065670684280627591, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
   m_PrefabInstance: {fileID: 1294616986}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &143454263
+--- !u!114 &143454262
 MonoBehaviour:
   m_ObjectHideFlags: 3
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1265,18 +1265,6 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 648539642599894138, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 648539642599894138, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 648539642599894138, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 648539642599894138, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
       propertyPath: m_LocalPosition.x
       value: 48.2
       objectReference: {fileID: 0}
@@ -1316,62 +1304,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 648539642599894138, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 3317652403799468345, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
       propertyPath: m_Name
       value: Lucifer
-      objectReference: {fileID: 0}
-    - target: {fileID: 3531605953328408129, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
-      propertyPath: spikeCount
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 3531605953328408129, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
-      propertyPath: destroyDelay
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 3531605953328408129, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
-      propertyPath: fireballCooldown
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 3531605953328408129, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
-      propertyPath: groundSpikePrefab
-      value: 
-      objectReference: {fileID: 1208772774634476038, guid: 4fe64ff46225d734db9a1d4c33937495, type: 3}
-    - target: {fileID: 4422124320554409460, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
-      propertyPath: OnDeath.m_PersistentCalls.m_Calls.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4422124320554409460, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
-      propertyPath: OnDeath.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 4422124320554409460, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
       propertyPath: OnDeath.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 1366656455}
-    - target: {fileID: 4422124320554409460, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
-      propertyPath: OnDeath.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 4422124320554409460, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
-      propertyPath: OnDeath.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: SetActive
-      objectReference: {fileID: 0}
-    - target: {fileID: 4422124320554409460, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
-      propertyPath: OnDeath.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: UnityEngine.GameObject, UnityEngine
-      objectReference: {fileID: 0}
-    - target: {fileID: 4422124320554409460, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
-      propertyPath: OnDeath.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_BoolArgument
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4422124320554409460, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
-      propertyPath: OnDeath.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: UnityEngine.Object, UnityEngine
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 70932a4b9e1edea40ad189f5252a576d, type: 3}
 --- !u!1001 &685049231
@@ -1616,9 +1556,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8510261854437397796, guid: 03138eaefc76fd44cb6437a91c3738be, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8510261854437397796, guid: 03138eaefc76fd44cb6437a91c3738be, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8510261854437397796, guid: 03138eaefc76fd44cb6437a91c3738be, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 8510261854437397797, guid: 03138eaefc76fd44cb6437a91c3738be, type: 3}
       propertyPath: targetSceneIndex
-      value: 0
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 8510261854437397851, guid: 03138eaefc76fd44cb6437a91c3738be, type: 3}
       propertyPath: m_IsActive
@@ -2409,7 +2361,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 7065670684306878055, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
   m_PrefabInstance: {fileID: 1294616986}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1412081045
+--- !u!114 &1412081044
 MonoBehaviour:
   m_ObjectHideFlags: 3
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3287,7 +3239,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 7065670684144617910, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
   m_PrefabInstance: {fileID: 1294616986}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1898818166
+--- !u!114 &1898818165
 MonoBehaviour:
   m_ObjectHideFlags: 3
   m_CorrespondingSourceObject: {fileID: 0}
