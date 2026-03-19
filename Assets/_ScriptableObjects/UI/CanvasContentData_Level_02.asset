@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fc5ab93533206446b0f2d05e8501eb9, type: 3}
   m_Name: CanvasContentData_Level_02
   m_EditorClassIdentifier: 
-  header: TITOLO LIVELLO
-  testo: Descrizione del livello.
+  header: Inferno, Canti XII
+  testo: "\"E tra \u2019l pi\xE8 de la ripa ed essa, in traccia \r\ncorrien centauri,
+    armati di saette, \r\ncome solien nel mondo andare a caccia.\""
   premiInvio: Premi INVIO per continuare

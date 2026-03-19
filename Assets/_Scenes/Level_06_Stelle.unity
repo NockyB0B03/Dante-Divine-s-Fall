@@ -339,7 +339,7 @@ MonoBehaviour:
   btnMainMenu: {fileID: 917532022}
   scrollDuration: 30
   autoReturnDelay: 30
-  fadeDuration: 1
+  fadeDuration: 0
 --- !u!4 &175867053
 Transform:
   m_ObjectHideFlags: 0
@@ -502,6 +502,7 @@ GameObject:
   - component: {fileID: 427708450}
   - component: {fileID: 427708449}
   - component: {fileID: 427708448}
+  - component: {fileID: 427708452}
   m_Layer: 5
   m_Name: CreditCanvas
   m_TagString: Untagged
@@ -595,6 +596,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!225 &427708452
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 427708447}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &702706618
 GameObject:
   m_ObjectHideFlags: 0
@@ -1288,8 +1301,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Dante: Divine's Fall\n\n\na LadyBoys Production game\n\n\n\n\n\n\nin association
-    with:\n\nClaudeAi\nProf Mezzetti\n\n\nGame Director:\nFrancesco Bertelli\n\nProducer:\nMatteo
+  m_text: "\n\n\n\n\n\n\n\nDante: Divine's Fall\n\n\na LadyBoys Production game\n\n\n\n\n\n\nin
+    association with:\n\nClaudeAi\nProf Mezzetti\n\n\nGame Director:\nFrancesco Bertelli\n\nProducer:\nMatteo
     Mezzetti\n\nGame Designer:\nLuca Buca\tGabriele Biamonte\nFrancesco Bertelli\tTommaso
     Fracassi\nGiulia De Angeli\n\nLevel Designer:\nLuca Buca\tGabriele Biamonte\nGiulia
     De Angeli\n\nNarrative Designer:\nFrancesco Bertelli\n\nGameplay Programmer:\nTommaso
