@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fc5ab93533206446b0f2d05e8501eb9, type: 3}
   m_Name: CanvasContentData_Level_05
   m_EditorClassIdentifier: 
-  header: TITOLO LIVELLO
-  testo: Descrizione del livello.
+  header: Inferno, Canto XXIV
+  testo: "\"Lo \u2019mperador del doloroso regno \r\nda mezzo \u2019l petto usc\xECa
+    fuor de la ghiaccia; \r\ne pi\xF9 con un gigante io mi convegno.\""
   premiInvio: Premi INVIO per continuare
