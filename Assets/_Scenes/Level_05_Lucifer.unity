@@ -2183,11 +2183,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7065670683487129777, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
       propertyPath: m_XAxis.m_MaxSpeed
-      value: 210
+      value: 270
       objectReference: {fileID: 0}
     - target: {fileID: 7065670683487129777, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
       propertyPath: m_YAxis.m_MaxSpeed
-      value: 1.4
+      value: 1.8
       objectReference: {fileID: 0}
     - target: {fileID: 7065670683487129778, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
       propertyPath: m_Name
@@ -3863,7 +3863,7 @@ PrefabInstance:
       objectReference: {fileID: 11400000, guid: fbfc4ea010827c64a8e81dec22b426f6, type: 2}
     - target: {fileID: 1442623196459303395, guid: c785104c10daa114c9d641566463653d, type: 3}
       propertyPath: minimumReadTime
-      value: 4
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 1442623196459303452, guid: c785104c10daa114c9d641566463653d, type: 3}
       propertyPath: m_RootOrder

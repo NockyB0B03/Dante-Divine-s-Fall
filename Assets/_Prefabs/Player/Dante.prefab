@@ -615,7 +615,7 @@ GameObject:
   - component: {fileID: 6567306219898201089}
   - component: {fileID: 1338409087809478364}
   - component: {fileID: 7690415460089170454}
-  m_Layer: 3
+  m_Layer: 9
   m_Name: HitBox_Punch
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -50,14 +50,24 @@ public class DamageDealer : MonoBehaviour
         bool isTarget = ((1 << other.gameObject.layer) & targetLayers) != 0;
         if (!isTarget) return false;
 
-        // Cerca Health sul collider o sul suo parent
-        Health health = other.GetComponent<Health>();
-        if (health == null)
-            health = other.GetComponentInParent<Health>();
+        // Non colpire mai Dante — ignora il suo Health component
+        if (GameManager.Instance?.PlayerHealth != null)
+        {
+            Health health = other.GetComponent<Health>();
+            if (health == null) health = other.GetComponentInParent<Health>();
+            if (health == null) return false;
+            if (health == GameManager.Instance.PlayerHealth) return false;
 
-        if (health == null) return false;
+            health.TakeDamage(GetCurrentDamage());
+            return true;
+        }
 
-        health.TakeDamage(GetCurrentDamage());
+        // Fallback se GameManager non è disponibile
+        Health h = other.GetComponent<Health>();
+        if (h == null) h = other.GetComponentInParent<Health>();
+        if (h == null) return false;
+
+        h.TakeDamage(GetCurrentDamage());
         return true;
     }
 
