@@ -337,8 +337,8 @@ MonoBehaviour:
   creditsTextRect: {fileID: 1937794807}
   viewportHeight: 1080
   btnMainMenu: {fileID: 917532022}
-  scrollDuration: 60
-  autoReturnDelay: 65
+  scrollDuration: 30
+  autoReturnDelay: 30
   fadeDuration: 1
 --- !u!4 &175867053
 Transform:

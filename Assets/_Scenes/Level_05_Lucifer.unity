@@ -2183,11 +2183,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7065670683487129777, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
       propertyPath: m_XAxis.m_MaxSpeed
-      value: 215.0592
+      value: 210
       objectReference: {fileID: 0}
     - target: {fileID: 7065670683487129777, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
       propertyPath: m_YAxis.m_MaxSpeed
-      value: 1.433728
+      value: 1.4
       objectReference: {fileID: 0}
     - target: {fileID: 7065670683487129778, guid: 2662d769a6d85204aa2f28ca73242bbc, type: 3}
       propertyPath: m_Name
