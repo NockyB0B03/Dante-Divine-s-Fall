@@ -714,6 +714,10 @@ PrefabInstance:
       value: LevelManager
       objectReference: {fileID: 0}
     - target: {fileID: 1442623196459303395, guid: c785104c10daa114c9d641566463653d, type: 3}
+      propertyPath: levelData
+      value: 
+      objectReference: {fileID: 11400000, guid: e14229345b9cdeb4aa360a0933476abf, type: 2}
+    - target: {fileID: 1442623196459303395, guid: c785104c10daa114c9d641566463653d, type: 3}
       propertyPath: fadeDuration
       value: 0
       objectReference: {fileID: 0}
